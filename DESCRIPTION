@@ -1,0 +1,14 @@
+Package: PECTSP
+Type: Package
+Title: Postprocessing ensembles of climate time series projections
+Version: 0.0-0
+Date: 2023-05-22
+Authors@R: person("Richard E.", "Chandler", role=c("aut", "cre"),
+             email="r.chandler@ucl.ac.uk")
+Author: Richard E. Chandler [aut, cre]
+Maintainer: Richard E. Chandler <r.chandler@ucl.ac.uk>
+Description: Contains routines for the analysis of ensembles of time series of climate projections from multiple climate models, accounting for complex shared discrepancies between properties of the models and the real climate system. Routines are provided for situations where the climate models can be considered as exchangeable, and also for structured ensembles using coupled pairs of models (such as global and regional model pairs in regional modelling experiments). The methodology is suitable for use with time series containing a single value per year. It is based around Gaussian dynamic linear models, although options are provided for ensuring that postprocessed projections remain non-negative if required. 
+License: file LICENSE
+Depends: R (>= 4.1), dlm (>= 1.1), magick, numDeriv
+Imports: Hmisc
+NeedsCompilation: no
