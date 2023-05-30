@@ -4,7 +4,8 @@
 \title{Visualising ensembles of climate projection time series}
 \description{Plots observed time series (with a single value per year), individual ensemble members and ensemble mean. }
 \usage{
-PlotEnsTS(Data, Colours, EnsTransp = 1, Types = c(1, 1), Units = expression(degree * "C"), plot = TRUE, add = FALSE, ...)
+PlotEnsTS(Data, Colours, EnsTransp = 1, Types = c(1, 1), 
+          Units = expression(degree * "C"), plot = TRUE, add = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
