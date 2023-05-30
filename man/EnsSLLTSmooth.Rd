@@ -4,7 +4,10 @@
 \title{Postprocessing an exchangeable ensemble of time series using smooth local linear trend models}
 \description{Fits a model of the form defined by \code{\link{EnsSLLT.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals.}
 \usage{
-EnsSLLTSmooth(Y, m0 = NULL, kappa = 1e+06, discrepancy = "varying", Groups = NULL, UseAlpha = TRUE, prior.pars = NULL, constrain = TRUE, Tiny = 1/kappa, ObsSmooth, Ens0Theta, messages = TRUE, Use.dlm = FALSE, debug = FALSE)
+EnsSLLTSmooth(Y, m0 = NULL, kappa = 1e+06, discrepancy = "varying", Groups = NULL, 
+              UseAlpha = TRUE, prior.pars = NULL, constrain = TRUE, 
+              Tiny = 1/kappa, ObsSmooth, Ens0Theta, messages = TRUE, 
+              Use.dlm = FALSE, debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
