@@ -5,7 +5,10 @@
 }
 \description{Fits a model of the form defined by \code{\link{EnsEBMtrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals.}
 \usage{
-EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06, prior.pars = NULL, UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE, messages = TRUE, Use.dlm = FALSE, debug = FALSE)
+EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06, 
+                  prior.pars = NULL, UseAlpha = TRUE, UsePhi = TRUE, 
+                  constrain = TRUE, messages = TRUE, Use.dlm = FALSE, 
+                  debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
