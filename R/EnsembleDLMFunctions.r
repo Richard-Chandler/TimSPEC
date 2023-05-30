@@ -2148,9 +2148,12 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
     theta.init <- c(1, ObsSmooth$Theta$par, SLLT.IniPar(Y[,-1])[1])
     par.names <- c("alpha", "log(sigsq[0])", "log(tausq[0])", "log(sigsq[1])")
     if (!UseAlpha) { theta.init <- theta.init[-1]; par.names <- par.names[-1] }
+    CurPriors <- prior.pars # Need to amend for this fit if discrepancy is "varying"
+    Npars <- nrow(CurPriors)
+    if (discrepancy=="varying") CurPriors <- CurPriors[-c(Npars-2, Npars),]
     thetahat <- dlm.SafeMLE(theta.init, Y, EnsSLLT.modeldef, m0=m0, kappa=kappa,
                        NRuns=NRuns, Groups=Groups, discrepancy="constant", 
-                       UseAlpha=UseAlpha, prior.pars=prior.pars, constrain=constrain, 
+                       UseAlpha=UseAlpha, prior.pars=CurPriors, constrain=constrain, 
                        hessian=(discrepancy=="constant"),
                        par.names=par.names, Use.dlm=Use.dlm, messages=messages,
                        debug=debug)
