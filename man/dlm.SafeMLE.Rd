@@ -5,7 +5,9 @@
 \description{This replaces the \code{\link{dlmMLE}} routine in the \pkg{dlm} library, which can be unstable. It uses \code{\link{nlm}} rather than \code{\link{optim}} for the optimisation.
 }
 \usage{
-dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE, par.names = NULL, prior.pars = NULL, messages = TRUE, hessian = FALSE, ...)
+dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE, 
+            par.names = NULL, prior.pars = NULL, messages = TRUE, 
+            hessian = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
