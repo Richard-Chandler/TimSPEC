@@ -4,7 +4,8 @@
 \title{Sampling from posterior predictive distribution.}
 \description{To sample from the posterior predictive distribution of (elements of) the observation vector for a dynamic linear model, conditioned on a set of sampled state vectors.}
 \usage{
-SampleObs(Thetas, States, build, Y, WhichEls = 1:ncol(Y), NonNeg = FALSE, ReplaceAll = FALSE, ...)
+SampleObs(Thetas, States, build, Y, WhichEls = 1:ncol(Y), NonNeg = FALSE, 
+          ReplaceAll = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
