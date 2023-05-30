@@ -4,7 +4,8 @@
 \title{State space model for an exchangeable ensemble of time series, inspired by Energy Balance Models}
 \description{Sets up the structure of a state space model for an observed time series and exchangeable ensemble, with trend formulation inspired by the form of a simple energy balance model (EBM).}
 \usage{
-EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, kappa, NRuns, Groups = NULL, UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE)
+EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, kappa, NRuns, Groups = NULL, 
+                     UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE)
 }
 \arguments{
   \item{theta}{Parameter vector. See "Details".}
