@@ -1,8 +1,8 @@
-Package: PECTSP
+Package: TimSPEC
 Type: Package
-Title: Postprocessing ensembles of climate time series projections
-Version: 0.0-0
-Date: 2023-05-22
+Title: Time Series postprocessing of ensembles for climate
+Version: 0.0-1
+Date: 2023-05-30
 Authors@R: person("Richard E.", "Chandler", role=c("aut", "cre"),
              email="r.chandler@ucl.ac.uk")
 Author: Richard E. Chandler [aut, cre]
