@@ -4,7 +4,10 @@
 \title{Postprocessing an two-way structured ensemble of time series using EBM-inspired dynamic linear models}
 \description{Fits a model of the form defined by \code{\link{EnsEBM2waytrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals. The motivating application is for a regional ensemble in which each member has been produced by running one of a collection of regional climate models (RCMs), with boundary conditions generated using one of a collection of global climate models (GCMs): the documentation below is framed in the context of such an application. }
 \usage{
-EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, Groups, prior.pars = NULL, interactions = "none", UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE, messages = TRUE, Use.dlm = FALSE, debug = TRUE)
+EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, Groups, 
+                      prior.pars = NULL, interactions = "none", 
+                      UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE, 
+                      messages = TRUE, Use.dlm = FALSE, debug = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
