@@ -4,7 +4,8 @@
 \title{Postprocessing an exchangeable ensemble of time series using smooth local linear trends}
 \description{ets up the structure of a simple "Ensemble smooth local linear trend" state space time series model for an observed time series and exchangeable ensemble.}
 \usage{
-EnsSLLT.modeldef(theta, m0 = NULL, kappa = 1e+06, NRuns, Groups = NULL, discrepancy = "varying", UseAlpha = TRUE, constrain = TRUE)
+EnsSLLT.modeldef(theta, m0 = NULL, kappa = 1e+06, NRuns, Groups = NULL, 
+                 discrepancy = "varying", UseAlpha = TRUE, constrain = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
