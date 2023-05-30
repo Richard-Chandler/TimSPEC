@@ -4,7 +4,11 @@
 \title{Plots of postprocessing results}
 \description{To plot the smoothing results from a dynamic linear model (DLM), together with the data used to produce them.}
 \usage{
-SmoothPlot(Data, Smooth = NULL, Samples = NULL, AntiLog = FALSE, NonNeg = FALSE, PlotMu0 = TRUE, PlotConsensus = FALSE, Weights = NULL, DatColours, DatTypes = c(1, 1), PredColours, alpha = c(0.6, 0.1), SmoothPIs = FALSE, Units = expression(degree * "C"), plot.title = "", ...)
+SmoothPlot(Data, Smooth = NULL, Samples = NULL, AntiLog = FALSE, 
+           NonNeg = FALSE, PlotMu0 = TRUE, PlotConsensus = FALSE, 
+           Weights = NULL, DatColours, DatTypes = c(1, 1), PredColours, 
+           alpha = c(0.6, 0.1), SmoothPIs = FALSE, 
+           Units = expression(degree * "C"), plot.title = "", ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
