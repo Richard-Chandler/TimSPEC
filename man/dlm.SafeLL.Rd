@@ -7,7 +7,8 @@
 library. It (a) handles situations where \code{\link{dlmLL}} returns an error or an infinite  value (b) is designed for use in calls to \code{\link{nlm}} rather than \code{\link{optim}} when estimating parameters (c) allows for maximisation of a \emph{penalised} likelihood which can be regarded as an approximation to a Bayesian posterior.
 }
 \usage{
-dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, debug = FALSE, ...)
+dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, 
+           debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
