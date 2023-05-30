@@ -4,7 +4,9 @@
 \title{Postprocessing a single time series using an EBM-inspired dynamic linear model}
 \description{Fits a model of the form defined by \code{\link{EBMtrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trend with prediction intervals.}
 \usage{
-EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE, prior.pars = NULL, messages = TRUE, Use.dlm = FALSE, debug = FALSE)
+EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE, 
+               prior.pars = NULL, messages = TRUE, Use.dlm = FALSE, 
+               debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
