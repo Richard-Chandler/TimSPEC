@@ -4,7 +4,9 @@
 \title{Approximate posterior sampling for dynamic linear models}
 \description{Generates samples from the approximate posterior distribution for the parameter vector of a dynamic linear model}
 \usage{
-dlm.ThetaSample(Fit, N, Random = TRUE, Quantile = TRUE, Level = if (!Quantile) 1.96 else 0.99, df = NULL, Antithetic = c("Mean", "Scale"))
+dlm.ThetaSample(Fit, N, Random = TRUE, Quantile = TRUE, 
+                Level = if (!Quantile) 1.96 else 0.99, 
+                  df = NULL, Antithetic = c("Mean", "Scale"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
