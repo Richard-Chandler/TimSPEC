@@ -4,7 +4,8 @@
 \title{Smooth Local Linear Trend modelling for a single time series}
 \description{Fits and applies a "smooth local linear trend" (SLLT) model to a univariate time series.}
 \usage{
-SLLTSmooth(Y, m0 = NULL, kappa = 1e+06, prior.pars = NULL, messages = TRUE, Use.dlm = FALSE, debug = FALSE, ...)
+SLLTSmooth(Y, m0 = NULL, kappa = 1e+06, prior.pars = NULL, messages = TRUE, 
+           Use.dlm = FALSE, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
