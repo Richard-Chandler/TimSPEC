@@ -11,7 +11,7 @@ SampleObs(Thetas, States, build, Y, WhichEls = 1:ncol(Y), NonNeg = FALSE,
 \arguments{
   \item{Thetas}{A matrix containing sampled parameter values, as produced by (e.g.) \code{\link{dlm.ThetaSample}}. }
   \item{States}{An array containing sampled time series of the state vector for each row of \code{Thetas} produced (e.g.) by \code{\link{SampleStates}}. }
-  \item{build}{Function to construct the \code{dlm} object being used. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package. }
+  \item{build}{Function to construct the \code{dlm} object being used. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package. }
   \item{Y}{The data: a matrix containing a column for each time series, in the form anticipated by the model constructed by \code{build}.}
   \item{WhichEls}{Numeric vector indicating which column(s) of \code{Y} to simulate. }
   \item{NonNeg}{Indicates whether the values to be returned should be non-negative. If not (the default), sampling is done from a normal distribution. Otherwise the samples are then transformed to the corresponding quantiles of a gamma distribution with the same mean and variance. }
