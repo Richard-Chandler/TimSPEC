@@ -322,12 +322,11 @@ SmoothPlot <-
     Obs <- Samples$Obs
     if (AntiLog) Obs <- exp(Obs)
     if (PlotConsensus) {
-      if (!("Consensus" %in% names(Samples$Model))) {
+      if (!("EnsembleConsensus" %in% names(attributes(Samples$States)))) {
         stop("Can't plot ensemble consensus without a 'Consensus' component of Model")
       }
-      EnsCons.Sampled <- # Calculate individual consensus estimates
-        apply(Samples$States, MARGIN=1:2, 
-              FUN=function(x) x %*% Samples$Model$Consensus)
+      EnsCons.Sampled <- # Extract individual consensus estimates
+        attr(Samples$States, "EnsembleConsensus")
       if (AntiLog) EnsCons.Sampled <- exp(EnsCons.Sampled)
     }
     if (is.null(WtsToUse)) {
@@ -343,9 +342,7 @@ SmoothPlot <-
       #   Turn off warnings here: if one or two of the weights
       #   are strongly dominant then wtd.quantile will get
       #   very upset and issue a warning for every row of
-      #   Samples$Obs. Instead, issue a single warning if
-      #   90% of the total weight comes from 10% or fewer
-      #   of the samples. 
+      #   Samples$Obs.  
       #
       owarn <- options()$warn
       options(warn=-1)
@@ -1282,6 +1279,8 @@ SampleStates <- function(Thetas, build, Y, NonNeg=NULL,
   p <- ncol(Model$FF)
   res <- array(dim=c(NSamp, Nt, p),
                dimnames=list(Sample=1:NSamp, Time=1:Nt, StateEl=1:p))
+  Cons <- NULL # Storage for ensemble consensus if model has it
+  if (!is.null(Model$Consensus)) Cons <- matrix(nrow=NSamp, ncol=Nt)
   FailedIDs <- numeric(0)
   NegWarned <- FALSE
   for (i in 1:NSamp) {
@@ -1319,9 +1318,16 @@ SampleStates <- function(Thetas, build, Y, NonNeg=NULL,
         }
       }
     } else FailedIDs <- c(FailedIDs, i)
+    #
+    #   Now calculate ensemble consensus if this is defined
+    #
+    if (!is.null(Model$Consensus) & !(i %in% FailedIDs)) {
+      Cons[i,] <- Sample[-1,] %*% Model$Consensus
+    }
   }
   if (messages) cat("\n")
   attr(res, "FailedIDs") <- NULL
+  attr(res, "EnsembleConsensus") <- Cons
   NFail <- length(FailedIDs)
   if (NFail > 0) {
     warning(paste("Sampling failed for",NFail,
