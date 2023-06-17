@@ -10,7 +10,7 @@ dlm.ImportanceWts(samples, build, Y, prior.pars = NULL, debug = TRUE, ...)
 \arguments{
   \item{samples}{A matrix, containing samples from the Gaussian (or multivariate \eqn{t}) approximation to the posterior and with attributes \code{Mean}, \code{Cov.SpD} and \code{df} as produced by \code{\link{dlm.ThetaSample}}
 }
-  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package. 
+  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package. 
 }
   \item{Y}{The data: a matrix containing a column for each time series in the ensemble, the first column corresponding to the real climate system. 
 }
