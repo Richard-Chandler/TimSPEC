@@ -1441,7 +1441,7 @@ SampleObs <- function(Thetas, States, build, Y, WhichEls=1:ncol(Y),
 ######################################################################
 PostPredSample <- function(Data, ModelBundle, Build, N,  
                            Random=TRUE, Quantile=TRUE, 
-                           Level=ifelse(Quantile, 1.96, 0.99),
+                           Level=ifelse(Quantile, 0.99, 1.96),
                            df=NULL, Antithetic=c("Mean", "Scale"),
                            Importance=FALSE, ReplaceOnFail=Random,
                            PlotFails=TRUE, WhichEls=1, NonNeg=FALSE,
