@@ -24,7 +24,7 @@ SmoothPlot(Data, Smooth = NULL, Samples = NULL, AntiLog = FALSE,
   \item{DatTypes}{Vector of line types, similarly. }
   \item{PredColours}{Vector of two colours: the first is the base colour for plotting estimates of the observed trend \eqn{\mu_{0}(\cdot)}{mu[0](.)}, and the second for plotting the ensemble consensus. }
   \item{alpha}{Vector of two transparency values used for plotting estimates and prediction intervals respectively. Values close to 1 are opaque, those close to 0 are more transparent. }
-  \item{SmoothPIs}{If \code{TRUE} and if \code{Samples} is provided, the prediction intervals on the plot will be smoothed using \code{\link{loess}}. Otherwise (the default) the raw quantiles from the sampled serieswill be plotted. }
+  \item{SmoothPIs}{If \code{TRUE} and if \code{Samples} is provided, the prediction intervals on the plot will be smoothed using \code{\link{loess}}. Otherwise (the default) the raw quantiles from the sampled series will be plotted. }
   \item{Units}{Length-1 character vector, used to label the vertical axis of the plot. Default value is appropriate for plots of temperature in degrees Celsius. }
   \item{plot.title}{Self-explanatory, hopefully. }
   \item{\dots}{Other arguments to \code{\link{PlotEnsTS}}. }
