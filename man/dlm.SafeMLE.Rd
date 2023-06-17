@@ -13,7 +13,7 @@ dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE,
 \arguments{
   \item{theta.init}{Initial value for the parameter vector}
   \item{Y}{The data}
-  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package.}
+  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package.}
   \item{debug}{As in \code{\link{dlmLL}}}
   \item{Use.dlm}{If \code{TRUE}, the function will use \code{\link{dlmMLE}} in place of \code{\link{nlm}} for the optimisation. This allows easy comparison of the results from the two optimisation procedures.}
   \item{par.names}{Optional character vector, the same length as \code{theta.init}, that will be used to label the parameters in the output}
