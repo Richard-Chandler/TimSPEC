@@ -4,11 +4,7 @@
 \title{Sample from posterior predictive distribution of observable time series}
 \description{To draw samples from the posterior predictive distribution of observable time series (real-world or ensemble members) using a fitted dynamic linear model (DLM).}
 \usage{
-PostPredSample(Data, ModelBundle, Build, N, Random = TRUE, Quantile = TRUE, 
-               Level = ifelse(Quantile, 1.96, 0.99), df = NULL, 
-               Antithetic = c("Mean", "Scale"), Importance = FALSE, 
-               ReplaceOnFail = Random, PlotFails = TRUE, WhichEls = 1, 
-               NonNeg = FALSE, ReplaceAll = FALSE, debug = TRUE, messages = FALSE, ...)
+PostPredSample(Data, ModelBundle, Build, N, Random = TRUE, Quantile = TRUE, Level = ifelse(Quantile, 0.99, 1.96), df = NULL, Antithetic = c("Mean", "Scale"), Importance = FALSE, ReplaceOnFail = Random, PlotFails = TRUE, WhichEls = 1, NonNeg = FALSE, ReplaceAll = FALSE, debug = TRUE, messages = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

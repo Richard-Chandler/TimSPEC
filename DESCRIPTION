@@ -1,8 +1,8 @@
 Package: TimSPEC
 Type: Package
 Title: Time Series postprocessing of ensembles for climate
-Version: 0.0-1
-Date: 2023-05-30
+Version: 0.0-2
+Date: 2023-06-20
 Authors@R: person("Richard E.", "Chandler", role=c("aut", "cre"),
              email="r.chandler@ucl.ac.uk")
 Author: Richard E. Chandler [aut, cre]
@@ -12,3 +12,4 @@ License: file LICENSE
 Depends: R (>= 4.1), dlm (>= 1.1), magick, numDeriv
 Imports: Hmisc
 NeedsCompilation: no
+LazyData: FALSE

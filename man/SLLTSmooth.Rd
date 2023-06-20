@@ -25,4 +25,28 @@ SLLTSmooth(Y, m0 = NULL, kappa = 1e+06, prior.pars = NULL, messages = TRUE,
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{SLLT.modeldef}}}
+\seealso{\code{\link{SLLT.modeldef}}, \code{\link{SmoothPlot}}}
+\examples{
+## Load package data 
+data(SSP585data)
+
+## Prior means and standard deviations for log variances
+priors <- rbind(c(-3.7, 3.45),    # log(sigsq.0)
+                c(-8.3, 3.45))    # log(tausq.0)
+
+## And prior mean and variance for trend & slope in 1949
+m0 <- c(14, 0)
+k <- 25
+
+## Fit and smooth the observations, then plot. NB second element of
+## PredColours isn't used here (ensemble data not used in smoothing)
+SLLTFit <- 
+  SLLTSmooth(GlobalTemps585$Obs, m0=m0, kappa=k, prior.pars=priors)
+SmoothPlot(GlobalTemps585[,1:2], SLLTFit, DatColours=c("black", NA),
+           PredColours=c("darkblue", NA), ylim=c(13.5,19.5))
+
+## Here's a plot of the smooth with the ensemble members as well
+SmoothPlot(GlobalTemps585, SLLTFit, DatColours=c("black", "coral3"),
+           PredColours=c("darkblue", NA), EnsTransp=0.3)
+
+}

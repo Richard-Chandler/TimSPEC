@@ -19,5 +19,3 @@ Maintainer: \packageMaintainer{TimSPEC}
 TO BE ADDED LATER
 }
 \keyword{ package }
-\examples{
-}
