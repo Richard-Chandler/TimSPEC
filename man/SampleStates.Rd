@@ -10,7 +10,7 @@ SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE,
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{Thetas}{A matrix containing sampled parameter values, as produced by (e.g.) \code{\link{dlm.ThetaSample}} }
-  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \code{TimSPEC} package. }
+  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package. }
     \item{Y}{The data: a matrix containing a column for each time series, in the form anticipated by the model constructed by \code{build}. This is used to calculate the exact log-posterior for each row of \code{Thetas}. }
   \item{NonNeg}{An optional vector containing indices of state elements that should not be negative (e.g. when analysing untransformed precipitation series). }
   \item{debug}{As in \code{\link{dlmLL}}. }

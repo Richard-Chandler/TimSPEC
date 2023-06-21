@@ -3,7 +3,7 @@
 \alias{GlobalTemps585}
 \alias{ERF585}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{Data for use in \code{TimSPEC} package examples}
+\title{Data for use in \pkg{TimSPEC} package examples}
 \description{The datasets provided here contain annual estimates of global mean surface temperature from 1950 to 2022, together with projected temperatures from five global climate models under shared socioeconomic pathway 5.8-5 and the corresponding global net radiative forcings.}
 %- maybe also 'usage' for other objects documented here.
 \details{The \code{SSP585data} dataset contains two data frames, as follows:

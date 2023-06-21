@@ -18,7 +18,8 @@ SLLT.modeldef(theta, kappa = 1e+06, m0 = NULL)
 \deqn{\mu(t) = \mu(t-1) + \beta(t-1)}{mu(t) = mu(t-1) + beta(t-1)}
 and
 \deqn{\beta(t) = \beta(t-1) + z[t]\ ,}{beta(t) = beta(t-1) + z[t] ,}
-where \eqn{E[\varepsilon(t)]=E[z(t)]=0}{E[e(t)]=E[z(t)]0}, \eqn{Var[\varepsilon(t)]=\sigma^{2}}{Var[e(t)]=sigma^2} and \eqn{Var[z(t)]=\tau^{2}}{Var[z(t)]=tau^2}, independently of each other and for each \eqn{t}.
+where \eqn{E[\varepsilon(t)]=E[z(t)]=0}{E[e(t)]=E[z(t)]0}, \eqn{Var[\varepsilon(t)]=\sigma^{2}}{Var[e(t)]=sigma^2} and \eqn{Var[z(t)]=\tau^{2}}{Var[z(t)]=tau^2}, independently of each other and for each \eqn{t}. The state vector at time \eqn{t} is defined as
+\deqn{\bm{S}(t) = \left(\mu(t)\ \beta(t)\right)'}{S(t) = (mu(t)  beta(t))'}
 }
 \value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.}
 \references{Chandler, R. E. and Scott, E. M. (2011). \emph{Statistical methods for trend detection and analysis in the environmental sciences}, Section 5.5. John Wiley & Sons, Chichester.}
