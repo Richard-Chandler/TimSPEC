@@ -64,7 +64,7 @@
 # make.SSinits          Finds initial estimates for the state vector in a
 #                       dynamic linear model. This is from the software 
 #                       provided with Chandler & Scott (2011).
-# plot.ImportanceWts    Pairs plot of posterior parameter samples, 
+# plotPPSWeights        Pairs plot of posterior parameter samples, 
 #                       with points shaded / coloured according to 
 #                       importance sampling weights. 
 # PlotEnsTS             Plots annual observed time series, together
@@ -87,7 +87,7 @@
 # SmoothPlot            To plot the smoothing results from a dlm, 
 #                       together with the ensembl data used to produce
 #                       them. 
-# summary.dlmMLE        Summarises the maximum likelihood estimates from
+# PrintDLMFit        Summarises the maximum likelihood estimates from
 #                       the results of a call to dlmMLE or equivalent
 # which.diffuse         Identifies which components of the state vector
 #                       require diffuse initialisation, in a dynamic linear
@@ -631,7 +631,7 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
   # minimises the log posterior density (equivalently the 
   # minimimum penalised log-likelihood) for the parameters; 
   # in this case, the value of prior.pars is also included
-  # in the list result for use by routines such as summary.dlmMLE().
+  # in the list result for use by routines such as PrintDLMFit().
   # otherwise it minimises the unpenalised log-likelihood. 
   # If use.dlm is TRUE then non-NULL values of prior.pars are 
   # ignored, with a warning. 
@@ -726,7 +726,7 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
   z
 }
 ######################################################################
-summary.dlmMLE <- function(fit, print=TRUE) {
+PrintDLMFit <- function(fit, print=TRUE) {
   ######################################################################
   #
   # Produce a summary table of a dlm fit obtained using dlmMLE.
@@ -1159,7 +1159,8 @@ dlm.ImportanceWts <- function(samples, build, Y, prior.pars=NULL,
   z
 }
 ######################################################################
-CumulativeWeightPlot <- function(w, ...) {
+CumulativeWeightPlot <- 
+  function(w, main="Cumulative distribution of importance weights", ...) {
   #
   #   To plot the cumulative contributions of a vector of
   #   weights, sorted in descending order. Arguments:
@@ -1173,13 +1174,13 @@ CumulativeWeightPlot <- function(w, ...) {
        xval=100*(0:NWts)/NWts, xlim=c(0,100), lwd=2, 
        col="darkblue", do.points=FALSE, verticals=TRUE,
        xlab="Cumulative % of samples", 
-       ylab="Cumulative % of total weight", ...)
+       ylab="Cumulative % of total weight", main=main, ...)
   abline(h=seq(20,80,20), col=grey(0.8), lty=2)
   abline(v=seq(20,80,20), col=grey(0.8), lty=2)
   invisible(z)
 }
 ######################################################################
-plot.ImportanceWts <- function(samples, weights, colours=NULL, 
+PlotPPSWeights <- function(samples, weights, colours=NULL, 
                                    oma=c(7,3,5,3), ...) {
   #
   #   To produce a pairs plot of sampled parameter values from 
@@ -1220,7 +1221,7 @@ plot.ImportanceWts <- function(samples, weights, colours=NULL,
   leg.cols <- findInterval(quantile(weights$w, probs=legend.quantiles), 
                            vec=breakpts, rightmost.closed=TRUE, all.inside=TRUE)
   leg.cols <- colours[leg.cols]
-  legend(x=0.5, y=0, xjust=0.5, yjust=1, fill=leg.cols, 
+  legend(x=0.5, y=0, xjust=0.5, yjust=0, fill=leg.cols, 
          legend=legend.quantiles, horiz=TRUE, cex=0.8, bty="n",
          title="Quantiles of importance weight distribution")
   par(opar)
@@ -1900,7 +1901,7 @@ SLLTSmooth <- function(Y, m0=NULL, kappa=1e6, prior.pars=NULL,
   Model <- SLLT.modeldef(thetahat$par, m0=m0)
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    summary.dlmMLE(thetahat)
+    PrintDLMFit(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -2216,7 +2217,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
   }
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    summary.dlmMLE(thetahat)
+    PrintDLMFit(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -2317,7 +2318,7 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE,
   Model <- EBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, kappa=kappa, UsePhi=UsePhi)
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    summary.dlmMLE(thetahat)
+    PrintDLMFit(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -2556,7 +2557,7 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, kappa=1e6,
                                 UsePhi=UsePhi, constrain=constrain)  
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    summary.dlmMLE(thetahat)
+    PrintDLMFit(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -3025,7 +3026,7 @@ EnsEBM2waytrendSmooth <-
                              constrain=constrain)  
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    summary.dlmMLE(thetahat)
+    PrintDLMFit(thetahat)
   }
   #
   #  Kalman Smoother, and return result
