@@ -5,10 +5,10 @@ export("covxfrm", "CumulativeWeightPlot", "dlm.ImportanceWts",
        "EnsEBM2waytrend.NegLL", "EnsEBM2waytrendSmooth",
        "EnsEBMtrend.modeldef", "EnsEBMtrendSmooth",
        "EnsSLLT.modeldef", "EnsSLLTSmooth", "ExamineFailures",
-       "GraphAnnot", "make.SSinits", "plot.ImportanceWts",
+       "GraphAnnot", "make.SSinits", "PlotPPSWeights",
        "PlotEnsTS", "PostPred.VidFrames", "PostPredSample",
        "SampleObs", "SampleStates", "SLLT.IniPar", "SLLT.modeldef",
-       "SLLTSmooth", "SmoothPlot", "summary.dlmMLE", "which.diffuse")
+       "SLLTSmooth", "SmoothPlot", "PrintDLMFit", "which.diffuse")
 import(dlm, numDeriv, magick)
 importFrom(Hmisc, "wtd.quantile")
 importFrom("grDevices", "col2rgb", "dev.off", "grey", "hcl.colors", "png", "rgb")
