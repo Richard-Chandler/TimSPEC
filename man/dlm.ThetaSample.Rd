@@ -47,6 +47,8 @@ If the antithetic options are used, the total number of samples produced is a mu
 }
 \value{A matrix in which each row contains a posterior sample. The matrix has additional attributes \code{Mean}, \code{Cov.SpD} and \code{df} giving the mean vector, covariance (dispersion) matrix spectral decomposition and degrees of freedom for the underlying distribution. 
 }
+\note{Users will rarely need to call this routine directly: it is called by \code{\link{PostPredSample}}.}
 \references{Durbin, J. and Koopman, S. J. (2012). \emph{Time series analysis by state space methods (second edition)}, Chapter 11. Oxford University Press, Oxford.}
-\author{Richard E. Chandler <r.chandler@ucl.ac.uk>
-}
+\author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
+\seealso{\code{\link{PostPredSample}}}
+

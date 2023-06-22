@@ -35,3 +35,38 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06,
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{EnsEBMtrend.modeldef}}}
 
+\examples{
+## Load package data 
+data(SSP585data)
+GCMIDs <- 
+  unlist(lapply(strsplit(names(GlobalTemps585)[-(1:2)], "\\\\."), 
+                FUN=function(x) x[1]))
+
+## Prior means and standard deviations for log variances
+priors <- rbind(c(1, 1), # alpha    
+                c(-3.7, 3.45),    # log(sigsq.0)
+                c(-8.3, 3.45),    # log(tausq.0)
+                c(-8.3, 3.45),    # log(tausq.w)
+                c(-3.7, 3.45),    # log(sigsq.1)
+                c(-8.3, 3.45),    # log(tausq.1)
+                c(0, 5),          # logit(phi.0)
+                c(0, 5))          # logit(phi.1)
+
+## And prior mean and variance for state vector in 1949
+m0 <- rep(0, 3*((length(unique(GCMIDs))+1)))
+m0[1] <- 14  # Prior expectation of global mean temperature in 1949
+k <- 25
+
+## Fit and smooth the observations (this could take a few minutes)
+EnsEBMFit <- 
+  EnsEBMtrendSmooth(as.matrix(GlobalTemps585[,-1]), Xt=ERF585$NetERF,
+                              Groups=as.numeric(as.factor(GCMIDs)), 
+                              m0=m0, kappa=k, prior.pars=priors,
+                              messages=FALSE)
+                            
+## Examine fitted mimic, and plot
+PrintDLMFit(EnsEBMFit$Theta)
+SmoothPlot(GlobalTemps585, EnsEBMFit, DatColours=c("black", "coral3"),
+           PredColours=c("darkblue", "darkgoldenrod"), PlotConsensus=TRUE, 
+           EnsTransp=0.2)
+}

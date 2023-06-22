@@ -3,10 +3,11 @@
 \title{Plotting of importance sampling weights}
 \description{To plot the cumulative contributions of a vector of importance sampling weights, sorted in descending order}
 \usage{
-CumulativeWeightPlot(w, ...)
+CumulativeWeightPlot(w, main="Cumulative distribution of importance weights", ...)
 }
 \arguments{
   \item{w}{The vector of weights}
+  \item{main}{Title to appear on plot}
   \item{\dots}{Other arguments to \code{\link{plot.stepfun}}
 }
 }
@@ -19,4 +20,4 @@ CumulativeWeightPlot(w, ...)
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{\code{\link{plot.stepfun}}}
+\seealso{\code{\link{plot.stepfun}}, \code{\link{PostPredSample}} (for an example)}

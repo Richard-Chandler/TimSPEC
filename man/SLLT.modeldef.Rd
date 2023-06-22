@@ -24,4 +24,4 @@ where \eqn{E[\varepsilon(t)]=E[z(t)]=0}{E[e(t)]=E[z(t)]0}, \eqn{Var[\varepsilon(
 \value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.}
 \references{Chandler, R. E. and Scott, E. M. (2011). \emph{Statistical methods for trend detection and analysis in the environmental sciences}, Section 5.5. John Wiley & Sons, Chichester.}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EBMtrend.modeldef}}, for a physically motivated alternative for application to climate time series.}
+\seealso{\code{\link{EBMtrend.modeldef}}, for a physically motivated alternative for application to climate time series; \code{\link{SLLTSmooth}}, for a direct user interface.}

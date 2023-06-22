@@ -62,7 +62,7 @@ EnsSLLTFit <- EnsSLLTSmooth(as.matrix(GlobalTemps585[,-1]),
                             messages=FALSE)
                             
 ## Examine fitted mimic, and plot
-print(summary.dlmMLE(EnsSLLTFit$Theta))
+PrintDLMFit(EnsSLLTFit$Theta)
 SmoothPlot(GlobalTemps585, EnsSLLTFit, DatColours=c("black", "coral3"),
            PredColours=c("darkblue", "darkgoldenrod"), PlotConsensus=TRUE, 
            EnsTransp=0.2)

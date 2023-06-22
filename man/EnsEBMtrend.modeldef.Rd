@@ -26,6 +26,10 @@ where:
 \item \eqn{\tilde{\mu}_{\omega}(\cdot)}{mu.tilde_{omega}(.)} is the shared discrepancy between the trend for the ensemble members and the real climate; 
 \item \eqn{\tilde{\mu}_{i}(\cdot)}{mu.tilde_{}(.)} is the additional discrepancy between the trend for the \eqn{i}th ensemble member and the ensemble consensus \eqn{\alpha\mu_{0}(\cdot) + \tilde{\mu}_{\omega}(\cdot)}{alpha*mu_0(.) + mu.tilde_{omega}(.)}. }
 
+The forcing coefficient \eqn{\gamma_{i}}{gamma_i} and drift discrepancy \eqn{\beta_{i}(t)}{beta_i(t)} are partitioned in the same way. The combined state vector for the observations and ensemble members is
+\deqn{\bm{S}(t) = \left(\mu_{0}(t)\ \beta_{0}(t)\ \gamma_{0}\ \tilde{\mu}_{\omega}(t)\ \tilde{\beta}_{\omega}(t)\ \tilde{\gamma}_{\omega}\ \tilde{\mu}_{1}(t)\ \tilde{\beta}_{1}(t)\ \tilde{\gamma}_{1}\ \ldots \tilde{\mu}_{G-1}(t)\ \tilde{\beta}_{G-1}(t)\ \tilde{\gamma}_{G-1}\right)'\ ,}{S(t) = (mu_0(t)  beta_0(t)  gamma_0  mu.tilde_w(t)  beta.tilde_w(t)  gamma.tilde_w  mu.tilde_1(t)  beta.tilde_1(t)  gamma.tilde_1  ... mu.tilde_[G-1](t) beta.tilde_[G-1](t)  gamma.tilde_[G-1])' ,}
+the final components for the \emph{G}th simulator being defined implicitly by sum-to-zero constraints. 
+
 If \code{UseAlpha} and \code{UsePhi} are both \code{TRUE} then the parameter vector \code{theta} is defined as follows:
 \describe{
 \item{\code{theta[1]}}{This is \eqn{\alpha}{alpha}, the scaling on the relationship between the ensemble consensus and observed trend processes.}
@@ -34,11 +38,11 @@ If \code{UseAlpha} and \code{UsePhi} are both \code{TRUE} then the parameter vec
 \item{\code{theta[4]}}{This is \eqn{\log(\tau^{2}_{\omega})}{log(tausq[omega])}, where \eqn{\tau^{2}_{\omega}}{tausq[omega]} is the innovation variance for the random walk drift approximation in the shared trend discrepancy process \eqn{\tilde{\mu}_{\omega}(\cdot)}{mu.tilde_{omega}(.)}.}
 \item{\code{theta[5]}}{This is \eqn{\log(\sigma^{2}_{1})}{log(sigsq[1])}, where \eqn{\sigma^{2}_{1}}{sigsq[1]} is the common "measurement error" variance for each of the ensemble members.}
 \item{\code{theta[6]}}{This is \eqn{\log(\tau^{2}_{1})}{log(tausq[1])}, where \eqn{\tau^{2}_{1}}{tausq[1]} is the common drift innovation variance for each of the ensemble members' individual trend discrepancies about their consensus trend.}
-\item{\code{theta[7]}}{This is logit(\eqn{phi_{0}}{phi[0]}), where \eqn{phi_{0}}{phi[0]} is the temporal dependence parameter (inertia coefficient) in the mean component of the real-world trend.}
-\item{\code{theta[8]}}{This is logit(\eqn{phi_{1}}{phi[1]}), where \eqn{phi_{1}}{phi[1]} is the common temporal dependence parameter in the mean component of the trends in all ensemble members.}
+\item{\code{theta[7]}}{This is logit(\eqn{\phi_{0}}{phi[0]}), where \eqn{\phi_{0}}{phi[0]} is the temporal dependence parameter (inertia coefficient) in the mean component of the real-world trend.}
+\item{\code{theta[8]}}{This is logit(\eqn{\phi_{1}}{phi[1]}), where \eqn{\phi_{1}}{phi[1]} is the common temporal dependence parameter in the mean component of the trends in all ensemble members.}
 }
 
-If \code{UseAlpha} is \code{FALSE} then the value of \eqn{\alpha}{alpha} is fixed at 1 and is omitted from \code{theta} so that \code{theta[1]} is \eqn{\log(\sigma^{2}_{0})}{log(sigsq[0]}), \code{theta[2]} is \eqn{\log(\tau^{2}_{0})}{log(tausq[0])} etc. 
+If \code{UseAlpha} is \code{FALSE} then the value of \eqn{\alpha}{alpha} is fixed at 1 and is omitted from \code{theta} so that \code{theta[1]} is \eqn{\log(\sigma^{2}_{0})}{log(sigsq[0])}, \code{theta[2]} is \eqn{\log(\tau^{2}_{0})}{log(tausq[0])} etc. 
 
 If \code{UsePhi} is \code{FALSE}, then both of the final elements of \code{theta} are omitted and the values of both \eqn{\phi_{0}}{phi[0]} and \eqn{\phi_{1}}{phi[1]} are set to 0. 
 }
@@ -48,4 +52,4 @@ If \code{UsePhi} is \code{FALSE}, then both of the final elements of \code{theta
 REFERENCES TO BE ADDED
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EBMtrend.modeldef}}}
+\seealso{\code{\link{EBMtrend.modeldef}}, \code{\link{EnsEBMtrendSmooth}}}

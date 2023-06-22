@@ -25,6 +25,8 @@ EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, kappa, Groups,
 \deqn{\mu_{rg}(t) = \alpha\mu_{0}(t) + \tilde{\mu}_{\omega}(t) + \tilde{\mu}_{r\cdot}(t) + \tilde{\mu}_{\cdot g}(t) + \tilde{\mu}_{rg}(t)\ ,}{mu_{rg}(t) = alpha*mu_0(t) + mu.tilde_{omega}(t) + mu.tilde_{r.}(t)  + mu.tilde_{.g}(t) + mu.tilde_{rg}(t),}
 incorporating discrepancy processes attributable to the individual RCMs and GCMs as well as to their interaction (the final term in the expression above, omitted from the analysis if \code{interactions="none"}). 
 
+The combined state vector for the observations and ensemble members has a similar form to that for \code{\link{EnsEBMtrend.modeldef}}, with successive triplets of \eqn{(\mu, \beta, \gamma)}{(mu, beta, gamma)} values and their discrepancies corresponding respectively to the real world, ensemble consensus discrepancy, GCM-specific discrepancies for GCMs 1 to \emph{G-1}, RCM-specific discrepancies for RCMs 1 to \emph{R-1}, and GCM:RCM interaction discrepancies if used. 
+
 The parameters for these models are the same as those for \code{\link{EnsEBMtrend.modeldef}}. In particular, common "measurement error" and innovation variances are assumed for all ensemble members.  
 }
 \value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.}
@@ -32,4 +34,4 @@ The parameters for these models are the same as those for \code{\link{EnsEBMtren
 REFERENCES TO BE ADDED
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EBMtrend.modeldef}}, \code{\link{EnsEBMtrend.modeldef}}}
+\seealso{\code{\link{EBMtrend.modeldef}}, \code{\link{EnsEBMtrend.modeldef}}, \code{\link{EnsEBM2waytrendSmooth}}}

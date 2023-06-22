@@ -29,3 +29,4 @@ If \code{UsePhi} is \code{FALSE}, the value of \eqn{\phi}{phi} in the model defi
 REFERENCES TO BE ADDED
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
+\seealso{\code{\link{EBMtrendSmooth}}}

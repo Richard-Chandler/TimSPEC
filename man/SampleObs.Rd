@@ -20,5 +20,6 @@ SampleObs(Thetas, States, build, Y, WhichEls = 1:ncol(Y), NonNeg = FALSE,
 }
 \details{Most users won't need to call this function: use \code{\link{PostPredSample}} instead, which is a wrapper to all of the function calls needed to produce a posterior predictive sample. }
 \value{The function returns an array of dimension \code{c(T, p, N)} where \code{N} is the number of samples, \code{T} the number of time points in \code{Y}, and \code{p} the number of series being simulated (i.e. the length of \code{WhichEls}). The ordering of dimensions ensures that if a single series is being simulated then the result will be a matrix with the series in columns. }
+\note{Users will rarely need to call this routine directly: it is called by \code{\link{PostPredSample}}.}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{PostPredSample}}}

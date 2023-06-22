@@ -29,7 +29,9 @@ The data matrix \code{Y} is used to calculate the exact log-posterior for each e
 Durbin, J. and Koopman, S. J. (2012). \emph{Time series analysis by state space methods (second
 edition)}, Chapter 13. Oxford University Press, Oxford.
 }
-\author{Richard E. Chandler <r.chandler@ucl.ac.uk>
-}
+\author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
+\seealso{\code{\link{PostPredSample}}}
 \note{The routine currently works only if \code{debug} is \code{TRUE}: this seems to be associated with the memory leak in the \pkg{dlm} library. 
+
+Users will rarely need to call this routine directly: use the appropriate option in \code{\link{PostPredSample}}.
 }

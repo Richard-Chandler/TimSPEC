@@ -22,7 +22,7 @@ dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE,
   \item{hessian}{Controls whether to compute the hessian on exit from \code{\link{nlm}}. The internal calculations within \code{\link{nlm}} itself can be inaccurate, so this is done via a call to \code{link{hessian}} from the \pkg{numDeriv} package.}
   \item{\dots}{ther arguments passed to \code{build} and \code{\link{nlm}}}
 }
-\details{If \code{Use.dlm} is \code{FALSE} and \code{prior.pars} is non-\code{NULL}, the routine minimises the negative log posterior density (equivalently the negative penalised log-likelihood) for the parameters; in this case, the value of \code{prior.pars} is also included in the list result (see below) for use by routines such as \code{\link{summary.dlmMLE}}. Otherwise it minimises the unpenalised log-likelihood. 
+\details{If \code{Use.dlm} is \code{FALSE} and \code{prior.pars} is non-\code{NULL}, the routine minimises the negative log posterior density (equivalently the negative penalised log-likelihood) for the parameters; in this case, the value of \code{prior.pars} is also included in the list result (see below) for use by routines such as \code{\link{PrintDLMFit}}. Otherwise it minimises the unpenalised log-likelihood. 
 
 If \code{use.dlm} is \code{TRUE} then non-\code{NULL} values of \code{prior.pars} are ignored, with a warning. 
 }
@@ -30,7 +30,7 @@ If \code{use.dlm} is \code{TRUE} then non-\code{NULL} values of \code{prior.pars
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>
 }
-
+\note{Users will rarely need to call this routine directly: it is called by the wrapper \code{...Smooth} functions.}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{\code{\link{dlmMLE}}, \code{\link{dlm.SafeLL}}}

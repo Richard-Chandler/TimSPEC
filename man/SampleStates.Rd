@@ -23,5 +23,6 @@ SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE,
 The row numbers of any failed samples are returned in the \code{FailedIDs} attribute of the returned object. Moreover, if \code{build} returns a \code{Consensus} component giving a linear combination of state vectors required to calculate an ensemble consensus, the consensus time series are also returned as a \code{(N, T)} matrix in the \code{EnsembleConsensus} attribute. 
 
 \strong{NOTE} that the routine removes the initial "time zero" values inserted by the \pkg{dlm} package. }
+\note{Users will rarely need to call this routine directly: it is called by \code{\link{PostPredSample}}.}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{PostPredSample}}}
