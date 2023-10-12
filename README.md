@@ -20,10 +20,13 @@ It makes use of the `dlm`, `Hmisc`, `magick` and `numDeriv` add-on packages in `
 distributed via [CRAN](https://cloud.r-project.org/web/packages/dlm/index.html). The package author has been notified but has not fixed them: 
 a patched version is needed, therefore. See the 'Installation' section below. 
 
+Installation requires the `devtools` package in `R`. The instructions below assume that this has been installed (e.g. via the `Tools` menu in `RStudio` or via `install.packages("devtools", lib=<whatever>)` from an `R` console).  
+
 # Installation
 
-To install the package from the `R` command line:
+If you have the `devtools` package installed in `R` then, in the `R` command line:
 
 ```
-bibble
+library(devtools)
+install_github("Richard-Chandler/TimSPEC")
 ```
