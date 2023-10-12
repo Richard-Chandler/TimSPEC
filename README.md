@@ -16,8 +16,14 @@ The methodology is described in detail in
 # Requirements
 
 The package has been tested under [R (version 4.1.2 and later)](https://www.r-project.org/), under both `Windows` and `Ubuntu` operating systems. 
-It makes use of the `dlm`, `magick` and `numDeriv` add-on packages in `R`. **Note, however:** there are memory leaks in the `dlm` package as 
+It makes use of the `dlm`, `Hmisc`, `magick` and `numDeriv` add-on packages in `R`. **Note, however:** there are memory leaks in the `dlm` package as 
 distributed via [CRAN](https://cloud.r-project.org/web/packages/dlm/index.html). The package author has been notified but has not fixed them: 
 a patched version is needed, therefore. See the 'Installation' section below. 
 
 # Installation
+
+To install the package from the `R` command line:
+
+```{r}
+bibble
+```
