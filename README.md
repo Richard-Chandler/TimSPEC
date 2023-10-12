@@ -24,9 +24,10 @@ Installation requires the `devtools` package in `R`. The instructions below assu
 
 # Installation
 
-If you have the `devtools` package installed in `R` then, in the `R` command line:
+If you have the `devtools` package installed in `R` then, from the `R` command line, the package can be installed using:
 
 ```
 library(devtools)
 install_github("Richard-Chandler/TimSPEC")
 ```
+
