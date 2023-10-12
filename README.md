@@ -31,3 +31,8 @@ library(devtools)
 install_github("Richard-Chandler/TimSPEC")
 ```
 
+To install the corrected version of the `dlm` library (version 1.1-6 at time of writing):
+
+```
+instal.packages(https://github.com/Richard-Chandler/TimSPEC/blob/main/dlm/dlm_1.1-6.tar.gz, repos=NULL)
+```
