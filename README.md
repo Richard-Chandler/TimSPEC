@@ -11,8 +11,7 @@ provided for ensuring that postprocessed projections remain non-negative if requ
 The methodology is described in detail in 
 
 > Chandler, R.E., C.R. Barnes and C.M. Brierley: _Decision-relevant characterisation of uncertainty in UK climate projections._ 
-Technical report, UK Climate Resilience Programme project CR20-3 _Enabling the use and producing improved understanding of EuroCORDEX data over the UK_, July 2023. 
-Available from [https://www.ucl.ac.uk/statistics/sites/statistics/files/projectionuncertainty.pdf](https://www.ucl.ac.uk/statistics/sites/statistics/files/projectionuncertainty.pdf).
+[Technical report, UK Climate Resilience Programme project CR20-3 _Enabling the use and producing improved understanding of EuroCORDEX data over the UK_, July 2023](https://www.ucl.ac.uk/statistics/sites/statistics/files/projectionuncertainty.pdf).
 
 # Requirements
 
