@@ -24,6 +24,6 @@ a patched version is needed, therefore. See the 'Installation' section below.
 
 To install the package from the `R` command line:
 
-```{r}
+```
 bibble
 ```
