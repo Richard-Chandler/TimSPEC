@@ -1,6 +1,6 @@
-# TimSPEC: R package for postprocessing ensembles of climate time series projections
+# TimSPEC: Time Series Postprocessing of Ensembles for Climate
 
-This package contains routines for the analysis of ensembles of time series of climate projections 
+This R package contains routines for the analysis of ensembles of time series of climate projections 
 from multiple climate models, accounting for complex shared discrepancies between properties of the models
 and the real climate system. Routines are provided for situations where the climate models can be considered 
 as exchangeable, and also for structured ensembles using coupled pairs of models (such as global and regional 
@@ -36,7 +36,7 @@ To install the corrected version of the `dlm` library (version 1.1-6 at time of 
 Then:
 
 ```
-install.packages("https://github.com/Richard-Chandler/TimSPEC/blob/main/dlm/dlm_1.1-6.tar.gz", repos=NULL)
+install.packages("https://github.com/Richard-Chandler/TimSPEC/raw/main/dlm/dlm_1.1-6.tar.gz", repos=NULL)
 ```
 
 If this succeeds, you are now ready to start. `help(SLLTSmooth)` may be a useful entry point. 
