@@ -31,8 +31,10 @@ library(devtools)
 install_github("Richard-Chandler/TimSPEC")
 ```
 
-To install the corrected version of the `dlm` library (version 1.1-6 at time of writing):
+To install the corrected version of the `dlm` library (version 1.1-6 at time of writing), `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). Then:
 
 ```
 install.packages(https://github.com/Richard-Chandler/TimSPEC/blob/main/dlm/dlm_1.1-6.tar.gz, repos=NULL)
 ```
+
+Depending on your operating system, it may me necessary to install the relevant 
