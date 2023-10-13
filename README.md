@@ -31,7 +31,7 @@ library(devtools)
 install_github("Richard-Chandler/TimSPEC")
 ```
 
-To install the corrected version of the `dlm` library (version 1.1-6 at time of writing), `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant compilation tools are available: however, we're all led to believe that Macs are so superior to everything else that no expertise is required. No instructions are provided for Mac users, therefore: you made your bed, go lie in it.
+To install the corrected version of the `dlm` library (version 1.1-6 at time of writing), `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant [compilation tools](https://mac.r-project.org/tools/) are available, depending on their setup.
 
 Then:
 
@@ -39,4 +39,4 @@ Then:
 install.packages("https://github.com/Richard-Chandler/TimSPEC/blob/main/dlm/dlm_1.1-6.tar.gz", repos=NULL)
 ```
 
-If this succeeds, you are now ready to start. `help(SLLTSmooth)` is possibly a useful entry point. 
+If this succeeds, you are now ready to start. `help(SLLTSmooth)` may be a useful entry point. 
