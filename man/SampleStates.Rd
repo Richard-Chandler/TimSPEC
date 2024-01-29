@@ -4,7 +4,8 @@
 \title{Sampling from posterior distribution of state vector}
 \description{To sample from the posterior distribution of the state vector for a dynamic linear model. This is essentially a wrapper for \code{\link{dlmBSample}}. }
 \usage{
-SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE, messages = FALSE, ...)
+SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE, 
+             messages = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

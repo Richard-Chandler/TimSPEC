@@ -7,7 +7,7 @@
 EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, Groups, 
                       prior.pars = NULL, interactions = "none", 
                       UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE,
-                      messages = TRUE, Use.dlm = FALSE, debug = TRUE)
+                      messages = TRUE, Use.dlm = FALSE, debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -23,7 +23,7 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, Groups,
   \item{constrain}{Logical scalar, controlling whether or not to ensure identifiability by imposing sum-to-zero constraints on relevant RCM-specific and GCM-specific effects.}
   \item{messages}{Logical scalar controlling whether or not to print progress to screen.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
-  \item{debug}{As in \code{\link{dlmMLE}}. Only \code{TRUE} is currently supported for this model, until the memory leak in the dlm package is fixed.}
+  \item{debug}{As in \code{\link{dlmMLE}}.}
 }
 \details{At present, the memory leak in the \code{C} code for \code{\link{dlmLL}} creates problems when calculating the log-likelihood for this DLM using \code{\link{dlm.SafeLL}}; in turn, this prevents the use of \code{\link{dlm.SafeMLE}} for this DLM. To get around this, function \code{EnsEBM2waytrend.NegLL} provides the required log-likelihood calculations. This does mean, however, that \code{Use.dlm=TRUE} is currently unsupported. 
 }

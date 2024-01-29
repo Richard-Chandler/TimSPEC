@@ -4,7 +4,7 @@
 \title{Importance weights for DLMs}
 \description{Calculates importance weights for sampling from the posterior distribution of the parameter vector in a dynamic linear model}
 \usage{
-dlm.ImportanceWts(samples, build, Y, prior.pars = NULL, debug = TRUE, ...)
+dlm.ImportanceWts(samples, build, Y, prior.pars = NULL, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -30,6 +30,4 @@ Durbin, J. and Koopman, S. J. (2012). \emph{Time series analysis by state space 
 edition)}, Chapter 13. Oxford University Press, Oxford.
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>
-}
-\note{The routine currently works only if \code{debug} is \code{TRUE}: this seems to be associated with the memory leak in the \pkg{dlm} library. 
 }

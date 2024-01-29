@@ -9,7 +9,7 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
                df = NULL, Antithetic = c("Mean", "Scale"), 
                Importance = FALSE, ReplaceOnFail = Random, 
                PlotFails = TRUE, WhichEls = 1, NonNeg = FALSE, 
-               ReplaceAll = FALSE, debug = TRUE, messages = FALSE, ...)
+               ReplaceAll = FALSE, debug = FALSE, messages = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
