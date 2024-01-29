@@ -17,5 +17,4 @@ SLLT.IniPar(Y, method = "arima", collapse = TRUE, Tiny = 1e-06)
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \note{Although the function provides the option of using a method of moments to find initial values by setting \code{method="moments"}, this is very inefficient for ARIMA  models containing a moving average component: its only advantage over \code{method="arima"} is that it's a bit quicker, although experience suggests that it can indeed produce wildly inaccurate initial values. }
 
-\note{Users will rarely need to call this routine directly: it is called by other fitting and smoothing functions.}
 \seealso{\code{\link{SLLT.modeldef}}, \code{\link{SLLTSmooth}}. }

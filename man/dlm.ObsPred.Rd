@@ -11,7 +11,4 @@ dlm.ObsPred(ModelBundle)
 }
 \value{The routine returns a list containing the predictions and their standard errors, each returned as a matrix in which the rows represent time points and columns represent series.
 }
-\note{Users will rarely need to call this routine directly: it is called by \code{\link{PostPredSample}}.}
-
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{PostPredSample}}}

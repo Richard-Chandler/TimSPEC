@@ -5,7 +5,8 @@
 \title{Add copyright information to a plot}
 \description{Adds copyright information and acknowledgements in the lower corners of a plot}
 \usage{
-GraphAnnot(Copyright = "© UCL 2022", Acknowl = "Funded by the UK Climate Resilience Programme")
+GraphAnnot(Copyright = "© UCL 2022", 
+           Acknowl = "Funded by the UK Climate Resilience Programme")
 }
 \arguments{
   \item{Copyright}{Text to be added at bottom left of plot, typically a copyright statement.}

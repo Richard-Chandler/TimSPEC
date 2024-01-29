@@ -24,7 +24,7 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06,
   \item{constrain}{Logical scalar controlling whether to impose sum-to-zero constraints across the ensemble members where necessary to make the model identifiable.}
   \item{messages}{Logical scalar controlling whether or not to print progress to screen.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
-  \item{debug}{As in \code{\link{dlmMLE}}. Only \code{TRUE} is currently supported for this model, until the memory leak in the \pkg{dlm} package is fixed.}
+  \item{debug}{As in \code{\link{dlmMLE}}.}
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model.}
 \value{A named list with three components:
@@ -33,40 +33,5 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06,
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EnsEBMtrend.modeldef}}}
+\seealso{\code{\link{EnsEBMtrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
 
-\examples{
-## Load package data 
-data(SSP585data)
-GCMIDs <- 
-  unlist(lapply(strsplit(names(GlobalTemps585)[-(1:2)], "\\\\."), 
-                FUN=function(x) x[1]))
-
-## Prior means and standard deviations for log variances
-priors <- rbind(c(1, 1), # alpha    
-                c(-3.7, 3.45),    # log(sigsq.0)
-                c(-8.3, 3.45),    # log(tausq.0)
-                c(-8.3, 3.45),    # log(tausq.w)
-                c(-3.7, 3.45),    # log(sigsq.1)
-                c(-8.3, 3.45),    # log(tausq.1)
-                c(0, 5),          # logit(phi.0)
-                c(0, 5))          # logit(phi.1)
-
-## And prior mean and variance for state vector in 1949
-m0 <- rep(0, 3*((length(unique(GCMIDs))+1)))
-m0[1] <- 14  # Prior expectation of global mean temperature in 1949
-k <- 25
-
-## Fit and smooth the observations (this could take a few minutes)
-EnsEBMFit <- 
-  EnsEBMtrendSmooth(as.matrix(GlobalTemps585[,-1]), Xt=ERF585$NetERF,
-                              Groups=as.numeric(as.factor(GCMIDs)), 
-                              m0=m0, kappa=k, prior.pars=priors,
-                              messages=FALSE)
-                            
-## Examine fitted mimic, and plot
-PrintDLMFit(EnsEBMFit$Theta)
-SmoothPlot(GlobalTemps585, EnsEBMFit, DatColours=c("black", "coral3"),
-           PredColours=c("darkblue", "darkgoldenrod"), PlotConsensus=TRUE, 
-           EnsTransp=0.2)
-}

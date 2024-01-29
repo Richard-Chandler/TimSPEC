@@ -18,8 +18,7 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE,
   \item{prior.pars}{Optional \code{3*2} matrix. If present, it is taken to contain the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertia).}
   \item{messages}{Controls whether to print progress to screen.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.} 
-  \item{debug}{As in \code{\link{dlmMLE}}. Only \code{TRUE} is currently supported for this model, until the memory leak in the \pkg{dlm} package is fixed.
-}
+  \item{debug}{As in \code{\link{dlmMLE}}.}
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model. 
 }
@@ -34,30 +33,4 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE,
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{\code{\link{EBMtrend.modeldef}}}
-
-\examples{
-## Load package data 
-data(SSP585data)
-
-## Prior means and standard deviations for log variances
-priors <- rbind(c(-3.7, 3.45),    # log(sigsq.0)
-                c(-8.3, 3.45),    # log(tausq.0)
-                c(0, 5))          # logit(phi)
-## And prior mean and variance for trend, drift & ERF coefficient in 1949
-m0 <- c(14, 0, 1)
-k <- 25
-
-## Fit and smooth the observations, then plot. NB second element of
-## PredColours isn't used here (ensemble data not used in smoothing)
-EBMFit <- EBMtrendSmooth(GlobalTemps585$Obs, Xt=ERF585$NetERF,
-                         kappa=k, UsePhi=TRUE, prior.pars=priors)
-SmoothPlot(GlobalTemps585[,1:2], EBMFit, DatColours=c("black", NA),
-           PredColours=c("darkblue", NA), ylim=c(13.5,18))
-
-## Here's a plot of the smooth with the ensemble members as well
-SmoothPlot(GlobalTemps585, EBMFit, DatColours=c("black", "coral3"),
-           PredColours=c("darkblue", NA), EnsTransp=0.3)
-
-
-}
+\seealso{\code{\link{EnsEBMtrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}

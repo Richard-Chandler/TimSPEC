@@ -10,7 +10,7 @@ SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE,
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{Thetas}{A matrix containing sampled parameter values, as produced by (e.g.) \code{\link{dlm.ThetaSample}} }
-  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package. }
+  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \code{PECTSP} package. }
     \item{Y}{The data: a matrix containing a column for each time series, in the form anticipated by the model constructed by \code{build}. This is used to calculate the exact log-posterior for each row of \code{Thetas}. }
   \item{NonNeg}{An optional vector containing indices of state elements that should not be negative (e.g. when analysing untransformed precipitation series). }
   \item{debug}{As in \code{\link{dlmLL}}. }
@@ -18,11 +18,8 @@ SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE,
   \item{\dots}{Additional arguments to \code{build}. }
 }
 \details{Most users won't need to call this function: use \code{\link{PostPredSample}} instead, which is a wrapper to all of the function calls needed to produce a posterior predictive sample. }
-\value{The function returns an array of dimension \code{c(N, T, p)} where \code{N} is the number of samples, \code{T} the number of time points in \code{Y}, and \code{p} the dimension of the state vector. Samples for which the Kalman Filter failed are left as \code{NA}, with a warning, as are samples containing negative values in the columns selected by \code{NonNeg} if this is non-\code{NULL}. 
-
-The row numbers of any failed samples are returned in the \code{FailedIDs} attribute of the returned object. Moreover, if \code{build} returns a \code{Consensus} component giving a linear combination of state vectors required to calculate an ensemble consensus, the consensus time series are also returned as a \code{(N, T)} matrix in the \code{EnsembleConsensus} attribute. 
+\value{The function returns an array of dimension \code{c(N, T, p)} where \code{N} is the number of samples, \code{T} the number of time points in \code{Y}, and \code{p} the dimension of the state vector. Samples for which the Kalman Filter failed are left as \code{NA}, with a warning, as are samples containing negativevalues in the columns selected by \code{NonNeg} if this is non-\code{NULL}. 
 
 \strong{NOTE} that the routine removes the initial "time zero" values inserted by the \pkg{dlm} package. }
-\note{Users will rarely need to call this routine directly: it is called by \code{\link{PostPredSample}}.}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{PostPredSample}}}

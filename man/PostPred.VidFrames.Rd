@@ -4,10 +4,12 @@
 \title{Animated samples from a posterior predictive distribution for a time series}
 \description{To produce the video frames for an animation of samples from a postprocessed ensemble and, optionally, use the frames to produce an animated GIF image}
 \usage{
-PostPred.VidFrames(Data, Samples, AntiLog = FALSE, DatColours, DatTypes = c(1, 1), 
-                   PredColours, Nsamples = 20, Nsteps = 5, replace = TRUE, Folder, 
-                   FileNameRoot = Folder, WarnExisting = TRUE, PNG.args = list(), 
-                   MakeGif = TRUE, DelFrames = FALSE, Annotation = FALSE, ...)
+PostPred.VidFrames(Data, Samples, AntiLog = FALSE, DatColours, 
+                   DatTypes = c(1, 1), PredColours, Nsamples = 20, 
+                   Nsteps = 5, replace = TRUE, Folder, 
+                   FileNameRoot = Folder, WarnExisting = TRUE, 
+                   PNG.args = list(), MakeGif = TRUE, DelFrames = FALSE,
+                   Annotation = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

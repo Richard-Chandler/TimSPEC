@@ -13,7 +13,7 @@ dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE,
 \arguments{
   \item{theta.init}{Initial value for the parameter vector}
   \item{Y}{The data}
-  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package.}
+  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package.}
   \item{debug}{As in \code{\link{dlmLL}}}
   \item{Use.dlm}{If \code{TRUE}, the function will use \code{\link{dlmMLE}} in place of \code{\link{nlm}} for the optimisation. This allows easy comparison of the results from the two optimisation procedures.}
   \item{par.names}{Optional character vector, the same length as \code{theta.init}, that will be used to label the parameters in the output}
@@ -22,15 +22,18 @@ dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE,
   \item{hessian}{Controls whether to compute the hessian on exit from \code{\link{nlm}}. The internal calculations within \code{\link{nlm}} itself can be inaccurate, so this is done via a call to \code{link{hessian}} from the \pkg{numDeriv} package.}
   \item{\dots}{ther arguments passed to \code{build} and \code{\link{nlm}}}
 }
-\details{If \code{Use.dlm} is \code{FALSE} and \code{prior.pars} is non-\code{NULL}, the routine minimises the negative log posterior density (equivalently the negative penalised log-likelihood) for the parameters; in this case, the value of \code{prior.pars} is also included in the list result (see below) for use by routines such as \code{\link{PrintDLMFit}}. Otherwise it minimises the unpenalised log-likelihood. 
+\details{If \code{Use.dlm} is \code{FALSE} and \code{prior.pars} is non-\code{NULL}, the routine minimises the negative log posterior density (equivalently the negative penalised log-likelihood) for the parameters; in this case, the value of \code{prior.pars} is also included in the list result (see below) for use by routines such as \code{\link{summary.dlmMLE}}. Otherwise it minimises the unpenalised log-likelihood. 
 
 If \code{use.dlm} is \code{TRUE} then non-\code{NULL} values of \code{prior.pars} are ignored, with a warning. 
 }
 \value{If \code{Use.dlm} is \code{TRUE} then the routine returns the result of a call to \code{\link{dlmMLE}}, with various control parameters set to stabilise the optimisation as far as possible. If \code{Use.dlm} is \code{FALSE}, the routine returns the list result from a call to \code{\link{nlm}} (see below for what is optimised in this case), but with the names of key components modified to match the results of a call to \code{\link{optim}} (which is used by \code{\link{dlmMLE}}. The exception is the \code{code} component of the result, which is retained and a \code{convergence} component is added which is compatible with the convergence codes from \code{\link{optim}}. This ensures that the routine can be run interchangeably with \code{\link{dlmMLE}}. A component \code{HessFail} is also added, to record whether the Hessian had to be tweaked to make it positive definite. 
+
+The result is assigned a class of \code{dlmMLE}, in order that the appropriate \code{\link[=summary.dlmMLE]{summary}} method can be used (see below).
+
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>
 }
-\note{Users will rarely need to call this routine directly: it is called by the wrapper \code{...Smooth} functions.}
+
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{\code{\link{dlmMLE}}, \code{\link{dlm.SafeLL}}}
+\seealso{\code{\link{dlmMLE}}, \code{\link{dlm.SafeLL}}, and \code{\link{summary.dlmMLE}} for the \code{summary} method.}

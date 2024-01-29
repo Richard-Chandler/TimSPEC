@@ -4,10 +4,10 @@
 \title{Postprocessing an exchangeable ensemble of time series using smooth local linear trend models}
 \description{Fits a model of the form defined by \code{\link{EnsSLLT.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals.}
 \usage{
-EnsSLLTSmooth(Y, m0 = NULL, kappa = 1e+06, discrepancy = "varying", Groups = NULL, 
-              UseAlpha = TRUE, prior.pars = NULL, constrain = TRUE, 
-              Tiny = 1/kappa, ObsSmooth, Ens0Theta, messages = TRUE, 
-              Use.dlm = FALSE, debug = FALSE)
+EnsSLLTSmooth(Y, m0 = NULL, kappa = 1e+06, discrepancy = "varying", 
+              Groups = NULL, UseAlpha = TRUE, prior.pars = NULL, 
+              constrain = TRUE, Tiny = 1/kappa, ObsSmooth, Ens0Theta, 
+              messages = TRUE, Use.dlm = FALSE, debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -34,36 +34,4 @@ EnsSLLTSmooth(Y, m0 = NULL, kappa = 1e+06, discrepancy = "varying", Groups = NUL
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EnsSLLT.modeldef}}}
-\examples{
-## Load package data 
-data(SSP585data)
-GCMIDs <- 
-  unlist(lapply(strsplit(names(GlobalTemps585)[-(1:2)], "\\\\."), 
-                FUN=function(x) x[1]))
-
-## Prior means and standard deviations for log variances
-priors <- rbind(c(1, 1), # alpha    
-                c(-3.7, 3.45),    # log(sigsq.0)
-                c(-8.3, 3.45),    # log(tausq.0)
-                c(-8.3, 3.45),    # log(tausq.w)
-                c(-3.7, 3.45),    # log(sigsq.1)
-                c(-8.3, 3.45))    # log(tausq.1)
-
-## And prior mean and variance for state vector in 1949
-m0 <- rep(0, 2*((length(unique(GCMIDs))+1)))
-m0[1] <- 14  # Prior expectation of global mean temperature in 1949
-k <- 25
-
-## Fit and smooth the observations (this could take a little time)
-EnsSLLTFit <- EnsSLLTSmooth(as.matrix(GlobalTemps585[,-1]), 
-                            Groups=as.numeric(as.factor(GCMIDs)), 
-                            m0=m0, kappa=k, prior.pars=priors,
-                            messages=FALSE)
-                            
-## Examine fitted mimic, and plot
-PrintDLMFit(EnsSLLTFit$Theta)
-SmoothPlot(GlobalTemps585, EnsSLLTFit, DatColours=c("black", "coral3"),
-           PredColours=c("darkblue", "darkgoldenrod"), PlotConsensus=TRUE, 
-           EnsTransp=0.2)
-}
+\seealso{\code{\link{EnsSLLT.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
