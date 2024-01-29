@@ -7,14 +7,13 @@
 library. It (a) handles situations where \code{\link{dlmLL}} returns an error or an infinite  value (b) is designed for use in calls to \code{\link{nlm}} rather than \code{\link{optim}} when estimating parameters (c) allows for maximisation of a \emph{penalised} likelihood which can be regarded as an approximation to a Bayesian posterior.
 }
 \usage{
-dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, 
-           debug = FALSE, ...)
+dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{theta}{The parameter vector}
   \item{Y}{The data matrix}
-  \item{build}{A function that will construct the \code{dlm} object representing the model for which the (penalised) log-likelihood is required. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package.}
+  \item{build}{A function that will construct the \code{dlm} object representing the model for which the (penalised) log-likelihood is required. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package.}
   \item{prior.pars}{If non-\code{NULL}, a two-column matrix with number of rows equal to the length of \code{theta}: the columns contain respectively the means and standard deviations of independent Gaussian priors on the elements of \code{theta}. 
   
   If \code{NULL} (the default), no prior information is used. 

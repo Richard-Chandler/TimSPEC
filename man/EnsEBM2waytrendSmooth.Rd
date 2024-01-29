@@ -6,7 +6,7 @@
 \usage{
 EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, Groups, 
                       prior.pars = NULL, interactions = "none", 
-                      UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE, 
+                      UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE,
                       messages = TRUE, Use.dlm = FALSE, debug = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -33,5 +33,5 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, Groups,
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EnsEBM2waytrend.modeldef}}}
+\seealso{\code{\link{EnsEBM2waytrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
 

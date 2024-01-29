@@ -10,7 +10,7 @@ dlm.ImportanceWts(samples, build, Y, prior.pars = NULL, debug = TRUE, ...)
 \arguments{
   \item{samples}{A matrix, containing samples from the Gaussian (or multivariate \eqn{t}) approximation to the posterior and with attributes \code{Mean}, \code{Cov.SpD} and \code{df} as produced by \code{\link{dlm.ThetaSample}}
 }
-  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package. 
+  \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package. 
 }
   \item{Y}{The data: a matrix containing a column for each time series in the ensemble, the first column corresponding to the real climate system. 
 }
@@ -29,9 +29,7 @@ The data matrix \code{Y} is used to calculate the exact log-posterior for each e
 Durbin, J. and Koopman, S. J. (2012). \emph{Time series analysis by state space methods (second
 edition)}, Chapter 13. Oxford University Press, Oxford.
 }
-\author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{PostPredSample}}}
+\author{Richard E. Chandler <r.chandler@ucl.ac.uk>
+}
 \note{The routine currently works only if \code{debug} is \code{TRUE}: this seems to be associated with the memory leak in the \pkg{dlm} library. 
-
-Users will rarely need to call this routine directly: use the appropriate option in \code{\link{PostPredSample}}.
 }

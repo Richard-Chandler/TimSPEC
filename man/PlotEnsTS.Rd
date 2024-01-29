@@ -5,7 +5,8 @@
 \description{Plots observed time series (with a single value per year), individual ensemble members and ensemble mean. }
 \usage{
 PlotEnsTS(Data, Colours, EnsTransp = 1, Types = c(1, 1), 
-  Units = expression(degree * "C"), plot = TRUE, add = FALSE, ...)
+          Units = expression(degree * "C"), plot = TRUE, 
+          add = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,32 +21,4 @@ PlotEnsTS(Data, Colours, EnsTransp = 1, Types = c(1, 1),
 }
 \value{The function returns a \code{NULL} value: its purpose is to produce a plot, not to perform calculations for subsequent use. }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{SmoothPlot}}, \code{\link{SSP585data}}}
-\examples{
-## Load package data 
-data(SSP585data)
-
-## Plot with simple colour scales
-PlotEnsTS(GlobalTemps585, Colours=c("black", "darkred"), EnsTransp=0.2, 
-  main="Observed and simulated global mean temperatures, 1950-2100")
-legend("topleft", lwd=c(3,3,1), col=c("black", "darkred", "darkred"),
-  legend=c("Observations", "Ensemble mean", "Ensemble members"))
-
-## And with each climate model identified (kudos to Clair Barnes
-## for the colour choices)
-GCMCols <- c("CanESM5" = "darkgoldenrod1",
-              "UKESM1-0-LL" = "chartreuse4",
-              "MIROC-ES2L-f2" = "brown4",
-              "NorESM2-MM" = "blue",
-              "FGOALS-g3" = "violetred3")
-GCMIDs <- 
-  unlist(lapply(strsplit(names(GlobalTemps585)[-(1:2)], "\\\\."), 
-                FUN=function(x) x[1]))
-
-PlotEnsTS(GlobalTemps585, 
-  Colours=c("black", "darkred", GCMCols[GCMIDs]),  
-  main="Observed and simulated global mean temperatures, 1950-2100")
-legend("topleft", lwd=c(3,3,rep(1, 5)), col=c("black", "darkred", GCMCols),
-  legend=c("Observations", "Ensemble mean", names(GCMCols)), ncol=2)
-
-}
+\seealso{\code{\link{SmoothPlot}}}
