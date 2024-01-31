@@ -34,3 +34,29 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE,
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{\code{\link{EnsEBMtrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
+
+\examples{
+## Load package data 
+data(SSP585data)
+
+## Prior means and standard deviations for log variances
+priors <- rbind(c(-3.7, 3.45),    # log(sigsq.0)
+                c(-8.3, 3.45),    # log(tausq.0)
+                c(0, 5))          # logit(phi)
+## And prior mean and variance for trend, drift & ERF coefficient in 1949
+m0 <- c(14, 0, 1)
+k <- 25
+
+## Fit and smooth the observations, then plot. NB second element of
+## PredColours isn't used here (ensemble data not used in smoothing)
+EBMFit <- EBMtrendSmooth(GlobalTemps585$Obs, Xt=ERF585$NetERF,
+                         kappa=k, UsePhi=TRUE, prior.pars=priors)
+SmoothPlot(GlobalTemps585[,1:2], EBMFit, DatColours=c("black", NA),
+           PredColours=c("darkblue", NA), ylim=c(13.5,18))
+
+## Here's a plot of the smooth with the ensemble members as well
+SmoothPlot(GlobalTemps585, EBMFit, DatColours=c("black", "coral3"),
+           PredColours=c("darkblue", NA), EnsTransp=0.3)
+
+
+}

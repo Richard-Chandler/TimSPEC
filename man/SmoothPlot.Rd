@@ -31,4 +31,5 @@ SmoothPlot(Data, Smooth = NULL, Samples = NULL, AntiLog = FALSE,
 }
 \value{The function produces a plot on the current graphics device. It also returns, invisibly, a data frame containing the values of the estimated "real" and "ensemble consensus" trends, together with the upper and lower 95\% limits for the real trend. The interpretation of the limits depends on the inputs: for a \code{Smooth} object, they're pointwise confidence bands while for a \code{Samples} object they arepointwise posterior predictive intervals. }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{PlotEnsTS}}, \code{\link{PostPredSample}}. }
+
+\seealso{\code{\link{SLLTSmooth}}, \code{\link{EnsSLLTSmooth}}, \code{\link{EBMtrendSmooth}} for examples. Also \code{\link{PlotEnsTS}}, \code{\link{PostPredSample}}. }
