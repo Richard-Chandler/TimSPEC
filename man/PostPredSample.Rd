@@ -79,6 +79,6 @@ CumulativeWeightPlot(PPS$Weights[,3])
 ## Looks OK: distribution isn't uniform but weights are distributed across
 ## all samples. Could also visualise how the sampled parameter values are
 ## reweighted:
-PlotPPSWeights(PPS$Thetas, PPS$Weights, oma=c(10,3,5,3))
+PlotImportanceWts(PPS$Thetas, PPS$Weights, oma=c(10,3,5,3))
 
 }
