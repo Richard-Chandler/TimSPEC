@@ -4,7 +4,7 @@
 \title{State space model for an exchangeable ensemble of time series, inspired by Energy Balance Models}
 \description{Sets up the structure of a state space model for an observed time series and exchangeable ensemble, with trend formulation inspired by the form of a simple energy balance model (EBM).}
 \usage{
-EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, kappa, NRuns, 
+EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa, NRuns, 
                      Groups = NULL, UseAlpha = TRUE, UsePhi = TRUE, 
                      constrain = TRUE)
 }
@@ -12,7 +12,8 @@ EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, kappa, NRuns,
   \item{theta}{Parameter vector. See "Details".}
   \item{Xt}{Vector containing time series of effective forcings.}
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
-  \item{kappa}{"Large" value with which to initialise variances of diffuse components of state vector at time 0.}
+  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
+  \item{kappa}{"Large" value with which to initialise variances of diffuse components of state vector at time 0. Ignored if \code{C0} is non-\code{NULL}.}
   \item{NRuns}{Number of ensemble members}
   \item{Groups}{Vector of length \code{NRuns}, indicating group membership. This should be used if an ensemble contains multiple runs from one or more simulators (i.e. climate models): in this case the elements of \code{Groups} should be integers between \code{1} and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL}, each member is assumed to come from a different simulator.}
   \item{UseAlpha}{See "Details" section}

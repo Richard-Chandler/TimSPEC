@@ -3,10 +3,11 @@
 \title{Plotting of importance sampling weights}
 \description{To plot the cumulative contributions of a vector of importance sampling weights, sorted in descending order}
 \usage{
-CumulativeWeightPlot(w, ...)
+CumulativeWeightPlot(w, main="Contributions of importance sampling weights", ...)
 }
 \arguments{
   \item{w}{The vector of weights}
+  \item{main}{Title for the plot}
   \item{\dots}{Other arguments to \code{\link{plot.stepfun}}
 }
 }

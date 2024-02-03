@@ -3,13 +3,14 @@ export("covxfrm", "CumulativeWeightPlot", "dlm.ImportanceWts",
        "dmvnorm.SpD", "dmvt.SpD", "EBMtrend.modeldef",
        "EBMtrendSmooth", "EnsEBM2waytrend.modeldef",
        "EnsEBM2waytrend.NegLL", "EnsEBM2waytrendSmooth",
-       "EnsEBMtrend.modeldef", "EnsEBMtrendSmooth",
+       "EnsEBMtrend.modeldef", "EnsEBMtrendSmooth", "EnsMean",
        "EnsSLLT.modeldef", "EnsSLLTSmooth", "ExamineFailures",
-       "GraphAnnot", "make.SSinits", "PlotPPSWeights",
+       "GraphAnnot", "make.SSinits", "PlotImportanceWts",
        "PlotEnsTS", "PostPred.VidFrames", "PostPredSample",
        "SampleObs", "SampleStates", "SLLT.IniPar", "SLLT.modeldef",
-       "SLLTSmooth", "SmoothPlot", "PrintDLMFit", "which.diffuse")
+       "SLLTSmooth", "SmoothPlot", "summary.dlmMLE", "which.diffuse")
 import(dlm, numDeriv, magick)
+importFrom("stats", "lm")
 importFrom(Hmisc, "wtd.quantile")
 importFrom("grDevices", "col2rgb", "dev.off", "grey", "hcl.colors", "png", "rgb")
 importFrom("graphics", "abline", "legend", "lines", "matlines", "matplot", "mtext", 
@@ -18,3 +19,4 @@ importFrom("stats", "acf", "arima", "coef", "contrasts<-", "cov2cor", "dnorm", "
  		"median", "model.matrix", "na.pass", "nlm", "pchisq", "pnorm", "ppoints",
  		"qchisq", "qgamma", "quantile", "rchisq", "rnorm", "stepfun", "var",
  		"weighted.mean")
+S3method(summary, dlmMLE)

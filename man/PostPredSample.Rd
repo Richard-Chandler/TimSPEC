@@ -42,4 +42,43 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
 \item{Weights}{Information on importance weights for each sample, if \code{Importance} is \code{TRUE}; otherwise \code{NULL}. If non-\code{NULL}, this is the result of calling \code{\link{dlm.ImportanceWts}};}  \item{Replacements}{A logical scalar indicating whether some of the initial samples were replaced --- see \code{ReplaceOnFail} argument above.} 
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}}, \code{\link{SampleObs}}}
+
+\seealso{\code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}}, \code{\link{SampleObs}}, \code{\link{SLLTSmooth}} (for details of example below)}
+
+\examples{
+## Start by running the example for EBMtrendSMooth to create a smooth object
+example(EBMtrendSmooth)
+
+## Now draw approximate posterior predictive samples from the created object
+## (which is named EBMFit) using Laplace approximation (i.e. not using 
+## importance sampling)
+PPSApprox <- 
+    PostPredSample(as.matrix(GlobalTemps585$Obs), ModelBundle=EBMFit, 
+                 Build=EBMtrend.modeldef, N=250, m0=m0, kappa=k,
+                 Xt=ERF585$NetERF)
+
+## Plot the result. NB no ensemble members are used here, hence NAs in colours
+SmoothPlot(GlobalTemps585[,1:2], Samples=PPSApprox, 
+           DatColours=c("black", NA), PredColours=c("darkblue", NA), 
+           SmoothPIs = TRUE, ylim=c(13, 19), 
+           main="Observation-only EBM trend: Laplace approx to posterior")
+
+## Same again with importance sampling
+PPS <- 
+    PostPredSample(as.matrix(GlobalTemps585$Obs), ModelBundle=EBMFit, 
+                 Importance=TRUE, Build=EBMtrend.modeldef, N=250, 
+                 m0=m0, kappa=k, Xt=ERF585$NetERF)
+SmoothPlot(GlobalTemps585[,1:2], Samples=PPS, 
+           DatColours=c("black", NA), PredColours=c("darkblue", NA), 
+           SmoothPIs = TRUE, ylim=c(13, 19), 
+           main="Observation-only EBM trend: posterior with importance sampling")
+
+## For completeness: check importance sampling weights
+CumulativeWeightPlot(PPS$Weights[,3])
+
+## Looks OK: distribution isn't uniform but weights are distributed across
+## all samples. Could also visualise how the sampled parameter values are
+## reweighted:
+PlotImportanceWts(PPS$Thetas, PPS$Weights, oma=c(10,3,5,3))
+
+}

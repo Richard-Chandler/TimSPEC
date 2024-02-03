@@ -4,7 +4,7 @@
 \title{Postprocessing a single time series using an EBM-inspired dynamic linear model}
 \description{Fits a model of the form defined by \code{\link{EBMtrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trend with prediction intervals.}
 \usage{
-EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE, 
+EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE, 
                prior.pars = NULL, messages = TRUE, Use.dlm = FALSE, 
                debug = FALSE)
 }
@@ -13,6 +13,7 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE,
   \item{Y}{Vector containing a univariate time series.}
   \item{Xt}{Vector containing the corresponding forcings (denoted as \eqn{f(t)} in the documentation for \code{\link{EBMtrend.modeldef}}).}
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
+  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Initialisation variance for diffuse elements of the state vector.}
   \item{UsePhi}{Controls whether or not to use the full model including a thermal inertia parameter.}
   \item{prior.pars}{Optional \code{3*2} matrix. If present, it is taken to contain the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertia).}
@@ -28,9 +29,32 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, kappa = 1e+06, UsePhi = TRUE,
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\note{\code{Use.dlm=TRUE} is currently unsupported for this model; and the routine currently contains bespoke optimisation code instead of calling \code{\link{dlm.SafeMLE}} due to a memory leak in the \code{C} code for \code{\link{dlmLL}}. 
-}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{\code{\link{EnsEBMtrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
+\examples{
+## Load package data 
+data(SSP585data)
+
+## Prior means and standard deviations for log variances
+priors <- rbind(c(-3.7, 3.45),    # log(sigsq.0)
+                c(-8.3, 3.45),    # log(tausq.0)
+                c(0, 5))          # logit(phi)
+## And prior mean and variance for trend, drift & ERF coefficient in 1949
+m0 <- c(14, 0, 1)
+k <- 25
+
+## Fit and smooth the observations, then plot. NB second element of
+## PredColours isn't used here (ensemble data not used in smoothing)
+EBMFit <- EBMtrendSmooth(GlobalTemps585$Obs, Xt=ERF585$NetERF,
+                         kappa=k, UsePhi=TRUE, prior.pars=priors)
+SmoothPlot(GlobalTemps585[,1:2], EBMFit, DatColours=c("black", NA),
+           PredColours=c("darkblue", NA), ylim=c(13.5,18))
+
+## Here's a plot of the smooth with the ensemble members as well
+SmoothPlot(GlobalTemps585, EBMFit, DatColours=c("black", "coral3"),
+           PredColours=c("darkblue", NA), EnsTransp=0.3)
+
+
+}

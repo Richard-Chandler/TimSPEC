@@ -5,7 +5,7 @@
 \description{Sets up the structure of a state space model for an observed time series and two-way structured ensemble, with trend formulation inspired by the form of a simple energy balance model (EBM). The motivating application is for a regional ensemble in which each member has been produced by running one of a collection of regional climate models (RCMs), with boundary conditions generated using one of a collection of global climate models (GCMs): the documentation below is framed in the context of such an application. 
 }
 \usage{
-EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, kappa, Groups, 
+EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa, Groups, 
                          interactions = "none", UseAlpha = TRUE, 
                          UsePhi = TRUE, constrain = TRUE)
 }
@@ -14,7 +14,8 @@ EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, kappa, Groups,
   \item{theta}{Parameter vector. See "Details".}
   \item{Xt}{Vector containing time series of effective forcings.}
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
-  \item{kappa}{"Large" value with which to initialise variances of diffuse components of state vector at time 0.}
+  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
+  \item{kappa}{"Large" value with which to initialise variances of diffuse components of state vector at time 0. Ignored if \code{C0} is non-\code{NULL}.}
   \item{Groups}{Two-column matrix specifying the group membership structureof the ensemble. E.g. if the ensemble contains runs from some combination of RCMs \eqn{1, 2, 3, ..., R} driven by GCMs \eqn{1, 2, 3, ..., G} then \code{Groups[i,1]} and \code{Groups[i,2]} should respectively contain the numbers of the RCM and GCM used for the \eqn{i}th ensemble member. The values of \eqn{R} and \eqn{G} will be taken from the largest numbers found in columns 1 and 2 respectively.}
   \item{interactions}{Character scalar, indicating which RCM:GCM "interaction" terms to include in the state vector. Options are \code{"none"} to exclude them completely, \code{"all"} to include all of them and \code{"available"} to include just those for which thecorresponding RCM:GCM combinations appear in \code{Groups}. Default is \code{"none"}, because the interaction terms substantially increase the dimension and are therefore likely to slow things down considerably.}
   \item{UseAlpha}{See "Details" section of help for \code{\link{EnsEBMtrend.modeldef}}}

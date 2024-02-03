@@ -4,12 +4,13 @@
 \title{Summarise a fitted model object}
 \description{Produces a summary table of a dynamic linear model fit obtained using \code{\link{dlmMLE}} or \code{\link{dlm.SafeMLE}}. }
 \usage{
-\method{summary}{dlmMLE}(fit, print = TRUE)
+\method{summary}{dlmMLE}(object, print = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{fit}{An object of class \code{dlmMLE}, typically the result of a call to \code{\link{dlmMLE}},  \code{\link{dlm.SafeMLE}} or equivalent. \strong{Note} that this object class is defined within the \pkg{TimSPEC} package, not within \pkg{dlm}.}
+  \item{object}{An object of class \code{dlmMLE}, typically the result of a call to \code{\link{dlmMLE}},  \code{\link{dlm.SafeMLE}} or equivalent. \strong{Note} that this object class is defined within the \pkg{TimSPEC} package, not within \pkg{dlm}.}
   \item{print}{If \code{TRUE} (the default), results are written to screen. }
+  \item{...}{Not used: needed just for consistency with the \code{\link[base]{summary}} generic}
 }
 \value{A list containing the following components:
 

@@ -13,7 +13,7 @@ dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, debug = FALSE, ..
 \arguments{
   \item{theta}{The parameter vector}
   \item{Y}{The data matrix}
-  \item{build}{A function that will construct the \code{dlm} object representing the model for which the (penalised) log-likelihood is required. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package.}
+  \item{build}{A function that will construct the \code{dlm} object representing the model for which the (penalised) log-likelihood is required. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package.}
   \item{prior.pars}{If non-\code{NULL}, a two-column matrix with number of rows equal to the length of \code{theta}: the columns contain respectively the means and standard deviations of independent Gaussian priors on the elements of \code{theta}. 
   
   If \code{NULL} (the default), no prior information is used. 

@@ -64,7 +64,7 @@
 # make.SSinits          Finds initial estimates for the state vector in a
 #                       dynamic linear model. This is from the software 
 #                       provided with Chandler & Scott (2011).
-# plotPPSWeights        Pairs plot of posterior parameter samples, 
+# plot.ImportanceWts    Pairs plot of posterior parameter samples, 
 #                       with points shaded / coloured according to 
 #                       importance sampling weights. 
 # PlotEnsTS             Plots annual observed time series, together
@@ -87,7 +87,7 @@
 # SmoothPlot            To plot the smoothing results from a dlm, 
 #                       together with the ensembl data used to produce
 #                       them. 
-# PrintDLMFit        Summarises the maximum likelihood estimates from
+# summary.dlmMLE        Summarises the maximum likelihood estimates from
 #                       the results of a call to dlmMLE or equivalent
 # which.diffuse         Identifies which components of the state vector
 #                       require diffuse initialisation, in a dynamic linear
@@ -107,8 +107,69 @@ covxfrm <- function(covmat,A) {
   A %*% covmat %*% t(A) 
 }
 ######################################################################
-PlotEnsTS <- function(Data, Colours, EnsTransp=1, Types=c(1,1), 
-                      Units=expression(degree*"C"), 
+EnsMean <- function(Data, EnsStruct=NULL, na.rm=TRUE) {
+  #
+  #  Calculates an ensemble mean series from its members. Arguments: 
+  #
+  #  Data   Data frame containing observed time series in its
+  #         first column and ensemble members in the remainder.
+  #         NB column 2 is ignored: it's part of the argument
+  #         for consistency with other routines in the TimSPEC
+  #         package.
+  #  EnsStruct A vector or matrix specifying any structure in the
+  #         ensemble, with a row for each ensemble member and
+  #         (in the matrix case) columns representing the 
+  #         codes of any grouping variables defining the structure.
+  #         The intention is that the Groups argument to, for
+  #         example, EnsEBMtrendSmooth or EnsEBM2waytrendSmooth
+  #         could be used here.
+  #  na.rm  Remove missing ensemble members when calculating the
+  #         mean? If TRUE (the default), this is done separately
+  #         for each time point - hence allowing for ensembles
+  #         including time series of different lengths
+  #
+  #  The function returns a vector containing the computed series.
+  #  If EnsStruct is NULL (the default) then this series is the 
+  #  overall mean of the ensemble members (subject to the 
+  #  treatment of missing values according to the value of 
+  #  na.rm). Otherwise, the series corresponds to the 
+  #  sequence of intercepts in ANOVA models fitted to the 
+  #  ensemble members at each time point, with factors 
+  #  defined by the column(s) of EnsStruct and using 
+  #  sum-to-zero constraints to ensure that the intercept
+  #  has the desired interpretation as a mean of the 
+  #  simulators or simulator combinations.
+  #
+  ######################################################################
+  if (is.null(EnsStruct)) {
+    z <- rowMeans(Data[,-1], na.rm=na.rm)
+  } else {
+    GrpFac <- apply(as.matrix(EnsStruct), MARGIN=2, FUN=as.factor,
+                    simplify=FALSE)
+    names(GrpFac) <- paste("V",1:length(GrpFac),sep="")
+    GrpFac <- list2DF(GrpFac)
+    OldOpt <- options("contrasts")$contrasts # Temporary redefinition
+    options(contrasts=c("contr.sum", "contr.poly"))
+    #
+    #   Next lines are tricky: putting GrpFac directly into lm
+    #   seems to lose information on factor levels for some reason, 
+    #   so construct the model matrix directly. Also need to 
+    #   handle time points for which all ensemble members are 
+    #   missing because lm can't cope with them. 
+    #
+    X <- model.matrix(~., GrpFac)     
+    y <- t(as.matrix(Data[,-1]))
+    Wanted <- apply(y, MARGIN=2, FUN=function(x) !all(is.na(x))) 
+    Intercepts <- coef(lm(y[,Wanted] ~ ., data=as.data.frame(X)))[1,]
+    options(contrasts=OldOpt) # Reset to original values
+    z <- rep(NA, length(Wanted))
+    z[Wanted] <- Intercepts
+  }
+  z
+}
+######################################################################
+PlotEnsTS <- function(Data, Colours, EnsStruct=NULL, na.rm=TRUE, EnsTransp=1, 
+                      Types=c(1,1), Units=expression(degree*"C"), 
                       plot=TRUE, add=FALSE, ...) {
   #
   #  Plots observed annual time series, individual ensemble members and 
@@ -117,6 +178,8 @@ PlotEnsTS <- function(Data, Colours, EnsTransp=1, Types=c(1,1),
   #  Data   Data frame containing time in column 1, observed series
   #         in column 2 and ensemble members in the remaining
   #         columns. 
+  #  EnsStruct See documentation for EnsMean
+  #  na.rm  Ditto
   #  Colours Vector containing the colour specifications for 
   #         the observations and ensemble members respectively.
   #         If of length 2 then the two colours will be used
@@ -176,9 +239,9 @@ PlotEnsTS <- function(Data, Colours, EnsTransp=1, Types=c(1,1),
   if (!add) matplot(Data[,1], Data[,-1], 
                     type="n", xlab="Year", ylab=Units, ...)
   if (plot) {
+    MeanLine <- EnsMean(Data[,-1, drop=FALSE], EnsStruct, na.rm)
     matlines(Data[,1], Data[,-(1:2)], col=EnsCols, lty=EnsTypes)
-    lines(Data[,1], rowMeans(Data[,-(1:2)]), col=EnsMeanCol,
-          lty=EnsMeanType, lwd=5)
+    lines(Data[,1], MeanLine, col=EnsMeanCol, lty=EnsMeanType, lwd=5)
     lines(Data[,1:2], col=ObsCol, lty=ObsType, lwd=5)
   }
   invisible(NULL)
@@ -322,11 +385,12 @@ SmoothPlot <-
     Obs <- Samples$Obs
     if (AntiLog) Obs <- exp(Obs)
     if (PlotConsensus) {
-      if (!("EnsembleConsensus" %in% names(attributes(Samples$States)))) {
+      if (!("Consensus" %in% names(Samples$Model))) {
         stop("Can't plot ensemble consensus without a 'Consensus' component of Model")
       }
-      EnsCons.Sampled <- # Extract individual consensus estimates
-        attr(Samples$States, "EnsembleConsensus")
+      EnsCons.Sampled <- # Calculate individual consensus estimates
+        apply(Samples$States, MARGIN=1:2, 
+              FUN=function(x) x %*% Samples$Model$Consensus)
       if (AntiLog) EnsCons.Sampled <- exp(EnsCons.Sampled)
     }
     if (is.null(WtsToUse)) {
@@ -342,7 +406,9 @@ SmoothPlot <-
       #   Turn off warnings here: if one or two of the weights
       #   are strongly dominant then wtd.quantile will get
       #   very upset and issue a warning for every row of
-      #   Samples$Obs.  
+      #   Samples$Obs. Instead, issue a single warning if
+      #   90% of the total weight comes from 10% or fewer
+      #   of the samples. 
       #
       owarn <- options()$warn
       options(warn=-1)
@@ -432,7 +498,7 @@ make.SSinits <- function(GG,W,kappa) {
   # according to equation (3.3.21) of Harvey (1989). 
   #
   # Value: a list containing components m0 and C0: m0 is the estimate
-  # of the state vector prior to seeing any data and P0 is the associated 
+  # of the state vector prior to seeing any data and C0 is the associated 
   # error covariance matrix.
   #
   ######################################################################
@@ -631,7 +697,7 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
   # minimises the log posterior density (equivalently the 
   # minimimum penalised log-likelihood) for the parameters; 
   # in this case, the value of prior.pars is also included
-  # in the list result for use by routines such as PrintDLMFit().
+  # in the list result for use by routines such as summary.dlmMLE().
   # otherwise it minimises the unpenalised log-likelihood. 
   # If use.dlm is TRUE then non-NULL values of prior.pars are 
   # ignored, with a warning. 
@@ -723,17 +789,19 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
     if (!is.null(par.names)) row.names(z$hessian) <- colnames(z$hessian) <- par.names
   }
   if (!(Use.dlm | is.null(prior.pars))) z$prior.pars <- prior.pars
+  class(z) <- "dlmMLE"
   z
 }
 ######################################################################
-PrintDLMFit <- function(fit, print=TRUE) {
+summary.dlmMLE <- function(object, print=TRUE, ...) {
   ######################################################################
   #
   # Produce a summary table of a dlm fit obtained using dlmMLE.
   # Arguments:
   #
-  # fit		      The result of a call to dlmMLE
+  # object		  The result of a call to dlmMLE
   # print	      If TRUE, results are written to screen
+  # ...         For consistency with the summary() generic
   #
   # Value: a list containing the following components:
   #
@@ -747,9 +815,9 @@ PrintDLMFit <- function(fit, print=TRUE) {
   #			parameter estimates. 
   #
   ######################################################################
-  have.hess <- "hessian" %in% names(fit)
+  have.hess <- "hessian" %in% names(object)
   if (have.hess) {
-    covmat <- try(solve(fit$hessian), silent=TRUE)
+    covmat <- try(solve(object$hessian), silent=TRUE)
     if (isTRUE(class(covmat) == "try-error")) {
       Std.Errs <- cormat <- NULL
     } else {
@@ -759,10 +827,10 @@ PrintDLMFit <- function(fit, print=TRUE) {
   } else {
     Std.Errs <- cormat <- NULL
   }
-  model.table <- rbind(fit$par,Std.Errs)
+  model.table <- rbind(object$par,Std.Errs)
   rownames(model.table) <- 
     if (!is.null(Std.Errs)) c("Estimate","SE") else "Estimate"
-  logLik <- -fit$value
+  logLik <- -object$value
   if (print) {
     cat("Parameter estimates:\n\n")
     print(signif(model.table,4))
@@ -774,12 +842,12 @@ PrintDLMFit <- function(fit, print=TRUE) {
         cat("\nHessian of log-likelihood is singular: standard errors unavailable\n")
       }
     }
-    if (is.null(fit$prior.pars)) {
+    if (is.null(object$prior.pars)) {
       cat(paste("\nLog-likelihood:",round(logLik,2),"\n\n"))
       z <- list(model.table=model.table,Corr=cormat,logLik=logLik)
     } else {
       log.prior <- 
-        sum(dnorm(fit$par, fit$prior.pars[,1], fit$prior.pars[,2], log=TRUE))
+        sum(dnorm(object$par, object$prior.pars[,1], object$prior.pars[,2], log=TRUE))
       cat(paste("\nPenalised log-likelihood (log posterior):",round(logLik,2)))
       cat(paste("\nUnpenalised log-likelihood:",
                 round(logLik-log.prior,2),"\n\n"))
@@ -1090,7 +1158,7 @@ dmvt.SpD <- function(x, mu, Cov.SpD, df, logged=FALSE) {
 }
 ######################################################################
 dlm.ImportanceWts <- function(samples, build, Y, prior.pars=NULL, 
-                              debug=TRUE, ...) {
+                              debug=FALSE, ...) {
   #
   #   Calculates importance weights for sampling from the
   #   posterior distribution of the parameter vector in a
@@ -1107,9 +1175,7 @@ dlm.ImportanceWts <- function(samples, build, Y, prior.pars=NULL,
   #           time series. This will be used to calculate the
   #           exact log-posterior for each element of theta. 
   #   prior.pars  As in dlm.SafeLL.
-  #   debug   As in dlmLL. **NOTE** that the routine currently 
-  #           works only if debug is TRUE: this seems to be 
-  #           associated with the bug in the dlm library. 
+  #   debug   As in dlmLL. 
   #   ...     Other arguments to build. 
   #
   #   Value: a data frame containing three columns and a row for each
@@ -1118,9 +1184,10 @@ dlm.ImportanceWts <- function(samples, build, Y, prior.pars=NULL,
   #   posterior mode; log(h(theta)/h(theta.hat)); and the 
   #   corresponding normalised importance weights. 
   #
-  if (!debug) {
-    stop("Due to a bug in the dlm library, debug=FALSE doesn't work here")
-  }
+  ### Should be fixed now (not in version on CRAN though)
+  ### if (!debug) {
+  ###  stop("Due to a bug in the dlm library, debug=FALSE doesn't work here")
+  ### }
   if (is.null(attr(samples, "df"))) {
     log.g <- dmvnorm.SpD(samples, attr(samples, "Mean"), 
                          attr(samples, "Cov.SpD"), logged=TRUE)
@@ -1160,13 +1227,14 @@ dlm.ImportanceWts <- function(samples, build, Y, prior.pars=NULL,
 }
 ######################################################################
 CumulativeWeightPlot <- 
-  function(w, main="Cumulative distribution of importance weights", ...) {
+  function(w, main="Contributions of importance sampling weights", ...) {
   #
   #   To plot the cumulative contributions of a vector of
   #   weights, sorted in descending order. Arguments:
   #
-  #   w   The vector of weights
-  #   ... Other arguments to plot.stepfun(). 
+  #   w     The vector of weights
+  #   main  Title for the plot
+  #   ...   Other arguments to plot.stepfun(). 
   #
   NWts <- length(w)
   z <- plot(stepfun(100*(1:NWts)/NWts, 
@@ -1180,7 +1248,7 @@ CumulativeWeightPlot <-
   invisible(z)
 }
 ######################################################################
-PlotPPSWeights <- function(samples, weights, colours=NULL, 
+PlotImportanceWts <- function(samples, weights, colours=NULL, 
                                    oma=c(7,3,5,3), ...) {
   #
   #   To produce a pairs plot of sampled parameter values from 
@@ -1221,7 +1289,7 @@ PlotPPSWeights <- function(samples, weights, colours=NULL,
   leg.cols <- findInterval(quantile(weights$w, probs=legend.quantiles), 
                            vec=breakpts, rightmost.closed=TRUE, all.inside=TRUE)
   leg.cols <- colours[leg.cols]
-  legend(x=0.5, y=0, xjust=0.5, yjust=0, fill=leg.cols, 
+  legend(x=0.5, y=0, xjust=0.5, yjust=1, fill=leg.cols, 
          legend=legend.quantiles, horiz=TRUE, cex=0.8, bty="n",
          title="Quantiles of importance weight distribution")
   par(opar)
@@ -1280,8 +1348,6 @@ SampleStates <- function(Thetas, build, Y, NonNeg=NULL,
   p <- ncol(Model$FF)
   res <- array(dim=c(NSamp, Nt, p),
                dimnames=list(Sample=1:NSamp, Time=1:Nt, StateEl=1:p))
-  Cons <- NULL # Storage for ensemble consensus if model has it
-  if (!is.null(Model$Consensus)) Cons <- matrix(nrow=NSamp, ncol=Nt)
   FailedIDs <- numeric(0)
   NegWarned <- FALSE
   for (i in 1:NSamp) {
@@ -1319,16 +1385,9 @@ SampleStates <- function(Thetas, build, Y, NonNeg=NULL,
         }
       }
     } else FailedIDs <- c(FailedIDs, i)
-    #
-    #   Now calculate ensemble consensus if this is defined
-    #
-    if (!is.null(Model$Consensus) & !(i %in% FailedIDs)) {
-      Cons[i,] <- Sample[-1,] %*% Model$Consensus
-    }
   }
   if (messages) cat("\n")
   attr(res, "FailedIDs") <- NULL
-  attr(res, "EnsembleConsensus") <- Cons
   NFail <- length(FailedIDs)
   if (NFail > 0) {
     warning(paste("Sampling failed for",NFail,
@@ -1448,11 +1507,11 @@ SampleObs <- function(Thetas, States, build, Y, WhichEls=1:ncol(Y),
 ######################################################################
 PostPredSample <- function(Data, ModelBundle, Build, N,  
                            Random=TRUE, Quantile=TRUE, 
-                           Level=ifelse(Quantile, 0.99, 1.96),
+                           Level=ifelse(Quantile, 1.96, 0.99),
                            df=NULL, Antithetic=c("Mean", "Scale"),
                            Importance=FALSE, ReplaceOnFail=Random,
                            PlotFails=TRUE, WhichEls=1, NonNeg=FALSE,
-                           ReplaceAll=FALSE, debug=TRUE,
+                           ReplaceAll=FALSE, debug=FALSE,
                            messages=FALSE, ...) {
   #
   #   To draw samples from the posterior predictive 
@@ -1756,7 +1815,7 @@ PostPred.VidFrames <-
   res
 }
 ######################################################################
-SLLT.modeldef <- function(theta, kappa=1e6, m0=NULL) {
+SLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6) {
   #
   #  Sets up the structure of a "smooth local linear trend" state space
   #  time series model. Arguments: 
@@ -1765,10 +1824,13 @@ SLLT.modeldef <- function(theta, kappa=1e6, m0=NULL) {
   #         error" variance, and theta[2] is the log of the innovation 
   #         variance on the slope process. 
   #  kappa  Initialisation variance for diffuse elements of the
-  #         state vector. 
+  #         state vector. Ignored if C0 is non-NULL.
   #  m0     Optional vector of initial values for the state vector. 
   #         If NULL (the default) this is determined automatically
   #         from the model structure. 
+  #  C0     Optional covariance matrix for initialising the state
+  #         vector. If NULL, like m0 this is determined from the
+  #         model structure and from kappa. 
   #
   #  The function returns a list defining a dynamical linear model, 
   #  in the format required by routines in the dlm library. 
@@ -1783,6 +1845,12 @@ SLLT.modeldef <- function(theta, kappa=1e6, m0=NULL) {
       stop(paste("m0 should be a vector containing",nrow(GG),"values"))
     }
     init$m0 <- m0
+  }
+  if (!is.null(C0)) { # Overwrite if the user supplied a value
+    if (!isTRUE(all(dim(C0)==nrow(GG)))) {
+      stop(paste("C0 should be a ",nrow(GG),"x",nrow(GG)," matrix",sep=""))
+    }
+    init$C0 <- C0
   }
   dlm(c(list(FF=FF,GG=GG,V=V,W=W),init))
 }
@@ -1853,7 +1921,7 @@ SLLT.IniPar <- function(Y, method="arima", collapse=TRUE, Tiny=1e-6) {
   log(theta.init) # Log scale for optimisation
 }
 ######################################################################
-SLLTSmooth <- function(Y, m0=NULL, kappa=1e6, prior.pars=NULL,  
+SLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, prior.pars=NULL,  
                        messages=TRUE, Use.dlm=FALSE, debug=FALSE, ...) {
   #
   #   Fits and applies a "smooth local linear trend" model to a univariate
@@ -1875,7 +1943,8 @@ SLLTSmooth <- function(Y, m0=NULL, kappa=1e6, prior.pars=NULL,
   #               case (the default), MAP estimation can also be done 
   #               by specifying prior.pars (see above). 
   #   debug       Controls whether to use R or C code in the dlm library 
-  #               (debug=FALSE means use C code, which is faster but buggy)
+  #               (debug=FALSE means use C code, which is faster but
+  #               doesn't allow tracing of problems)
   #  
   #  The function returns a list with three components: the first is the 
   #  object containing results of the maximum likelihood parameter 
@@ -1896,12 +1965,12 @@ SLLTSmooth <- function(Y, m0=NULL, kappa=1e6, prior.pars=NULL,
     dlm.SafeMLE(as.numeric(theta.init), Y, SLLT.modeldef,
                 debug=debug, Use.dlm=Use.dlm, 
                 par.names=c("log(sigsq)", "log(tausq)"), 
-                prior.pars=prior.pars, m0=m0, 
+                prior.pars=prior.pars, m0=m0, C0=C0,
                 kappa=kappa, messages=messages, hessian=TRUE, ...)
-  Model <- SLLT.modeldef(thetahat$par, m0=m0)
+  Model <- SLLT.modeldef(thetahat$par, m0=m0, C0=C0)
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    PrintDLMFit(thetahat)
+    summary.dlmMLE(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -1910,8 +1979,8 @@ SLLTSmooth <- function(Y, m0=NULL, kappa=1e6, prior.pars=NULL,
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
-EnsSLLT.modeldef <- function(theta, m0=NULL, kappa=1e6, NRuns, 
-                             Groups=NULL, discrepancy="varying", 
+EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
+                             NRuns, Groups=NULL, discrepancy="varying", 
                              UseAlpha=TRUE, constrain=TRUE) {
   #
   #   Sets up the structure of a simple "Ensemble smooth local 
@@ -1953,11 +2022,15 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, kappa=1e6, NRuns,
   #   m0         Optional vector of initial values for the state vector. 
   #              If NULL (the default) this is determined automatically
   #              from the model structure. 
+  #   C0         Optional covariance matrix for initialising the state
+  #              vector. If NULL, like m0 this is determined from the
+  #              model structure and from kappa. 
   #   kappa      "Large" value with which to initialise variances of
   #              diffuse components of state vector at time 0. Taking
   #              it too large can lead to numerical instability, 
   #              however. It should be several orders of magnitude 
-  #              larger than any of the model variances.
+  #              larger than any of the model variances. This is
+  #              ignored if C0 is non-NULL.
   #   NRuns      Number of ensemble members
   #   Groups     Vector of length NRuns, indicating group membership. 
   #              This should be used if an ensemble contains multiple 
@@ -2040,6 +2113,12 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, kappa=1e6, NRuns,
     init$C0[5:nS, 5:nS] <- -kappa / NRuns
     diag(init$C0)[5:nS] <- diag(init$C0)[5:nS] + kappa
   }
+  if (!is.null(C0)) { # Overwrite if the user supplied a value
+    if (!isTRUE(all(dim(C0)==nrow(GG)))) {
+      stop(paste("C0 should be a ",nrow(GG),"x",nrow(GG)," matrix",sep=""))
+    }
+    init$C0 <- C0
+  }
   Consensus <- FF[2,]; Consensus[5] <- 0 # Coefficients yielding ensemble consensus
   #
   #   Ideally, would return a dlm object. However, the dlm() routine
@@ -2052,7 +2131,7 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, kappa=1e6, NRuns,
   list(FF=FF,GG=GG,V=V,W=W,m0=init$m0,C0=init$C0, Consensus=Consensus)
 }
 ######################################################################
-EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying", 
+EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying", 
                           Groups=NULL, UseAlpha=TRUE, prior.pars=NULL, constrain=TRUE, 
                           Tiny=1/kappa, ObsSmooth, Ens0Theta, 
                           messages=TRUE, Use.dlm=FALSE, 
@@ -2112,8 +2191,8 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
   #   Use.dlm   Logical: if TRUE then fitting is done using dlmMLE
   #               to optimise the likelihood, otherwise nlm is used.
   #   debug     Logical: argument passed to dlm routines to control
-  #             whether to use faster C code (the default) which can 
-  #             be buggy, or slower R code.
+  #             whether to use faster C code (the default), or 
+  #             slower R code which allows problem tracing. 
   #
   #  The function returns a list with three components: the first is the 
   #  object containing results of the maximum likelihood parameter estimation, 
@@ -2126,13 +2205,15 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
     stop("discrepancy must be either 'constant' or 'varying'")
   }
   NRuns <- ncol(Y) - 1 # Number of ensemble members
-  EnsembleMean <- rowMeans(Y[,-1])
+  EnsembleMean <- EnsMean(Y, Groups)
   #
-  #  Produce a smooth of the observations if it hasn't been supplied
+  #  Produce a smooth of the observations if it hasn't been supplied.
+  #  NB if m0 or C0 is NULL then the subsets are too (handy).
   #
   if (missing("ObsSmooth")) 
     ObsSmooth <- SLLTSmooth(Y[,1], messages=FALSE, Use.dlm=Use.dlm, 
-                            m0=m0[1:2], kappa=kappa, debug=debug)
+                            m0=m0[1:2], C0=C0[1:2, 1:2],
+                            kappa=kappa, debug=debug)
   #
   #  Now fit a constant-discrepancy model if this is needed, which is the 
   #  case EITHER if discrepancy=="constant" OR if discrepancy=="varying" and
@@ -2142,7 +2223,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
   if (discrepancy=="constant" | (discrepancy=="varying" & missing("Ens0Theta"))) {
     #
     #   For the constant-discrepancy version and if UseAlpha is TRUE, initial 
-    #   value for theta[1] is1 (implying that ensemble consensus slopes are
+    #   value for theta[1] is 1 (implying that ensemble consensus slopes are
     #   more or less proportional to those for observations). Initial values 
     #   for theta[2] and theta[3] are the MLEs from an observation-only model, 
     #   which needs to be fitted if not supplied as an argument. The smooth also
@@ -2158,15 +2239,18 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
     CurPriors <- prior.pars # Need to amend for this fit if discrepancy is "varying"
     Npars <- nrow(CurPriors)
     if (discrepancy=="varying") CurPriors <- CurPriors[-c(Npars-2, Npars),]
-    thetahat <- dlm.SafeMLE(theta.init, Y, EnsSLLT.modeldef, m0=m0, kappa=kappa,
-                       NRuns=NRuns, Groups=Groups, discrepancy="constant", 
-                       UseAlpha=UseAlpha, prior.pars=CurPriors, constrain=constrain, 
-                       hessian=(discrepancy=="constant"),
-                       par.names=par.names, Use.dlm=Use.dlm, messages=messages,
-                       debug=debug)
-    Model <- EnsSLLT.modeldef(thetahat$par, m0=m0, kappa=kappa, NRuns=NRuns, 
-                              Groups=Groups, discrepancy="constant", UseAlpha=UseAlpha,
-                              constrain=constrain)
+    thetahat <- 
+      dlm.SafeMLE(theta.init, Y, EnsSLLT.modeldef, m0=m0, C0=C0, 
+                  kappa=kappa,NRuns=NRuns, Groups=Groups, 
+                  discrepancy="constant", UseAlpha=UseAlpha, 
+                  prior.pars=CurPriors, constrain=constrain, 
+                  hessian=(discrepancy=="constant"), par.names=par.names, 
+                  Use.dlm=Use.dlm, messages=messages, debug=debug)
+    Model <- 
+      EnsSLLT.modeldef(thetahat$par, m0=m0, C0=C0, kappa=kappa, 
+                       NRuns=NRuns, Groups=Groups, 
+                       discrepancy="constant", UseAlpha=UseAlpha,
+                       constrain=constrain)
   }
   if (discrepancy=="varying") {
     #
@@ -2190,7 +2274,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
     #
     EnsMeanSmooth <- 
       SLLTSmooth(EnsembleMean, messages=FALSE, Use.dlm=Use.dlm, 
-                 m0=m0[3:4], kappa=kappa, debug=debug)
+                 m0=m0[3:4], C0=C0[3:4, 3:4], kappa=kappa, debug=debug)
     #
     #  Don't forget to remove first element of estimates (time point 0)!
     #
@@ -2206,18 +2290,22 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
     par.names <- c("alpha", "log(sigsq[0])", "log(tausq[0])", 
                    "log(tausq[d])", "log(sigsq[1])", "log(tausq[1])")
     if (!UseAlpha) { theta.init <- theta.init[-1]; par.names <- par.names[-1] }
-    thetahat <- dlm.SafeMLE(theta.init, Y, EnsSLLT.modeldef, m0=m0, kappa=kappa,
-                       NRuns=NRuns, Groups=Groups, discrepancy="varying", UseAlpha=UseAlpha,
-                       prior.pars=prior.pars, constrain=constrain, 
-                       hessian=TRUE, messages=messages, par.names=par.names, 
-                       Use.dlm=Use.dlm, debug=debug)
-    Model <- EnsSLLT.modeldef(thetahat$par, m0=m0, kappa=kappa, NRuns=NRuns,
-                              Groups=Groups, discrepancy="varying", UseAlpha=UseAlpha, 
-                              constrain=constrain)
+    thetahat <- 
+      dlm.SafeMLE(theta.init, Y, EnsSLLT.modeldef, m0=m0, C0=C0, 
+                  kappa=kappa, NRuns=NRuns, Groups=Groups, 
+                  discrepancy="varying", UseAlpha=UseAlpha,
+                  prior.pars=prior.pars, constrain=constrain, 
+                  hessian=TRUE, messages=messages, par.names=par.names, 
+                  Use.dlm=Use.dlm, debug=debug)
+    Model <- 
+      EnsSLLT.modeldef(thetahat$par, m0=m0, C0=C0, kappa=kappa, 
+                       NRuns=NRuns, Groups=Groups, 
+                       discrepancy="varying", UseAlpha=UseAlpha, 
+                       constrain=constrain)
   }
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    PrintDLMFit(thetahat)
+    summary.dlmMLE(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -2226,7 +2314,8 @@ EnsSLLTSmooth <- function(Y, m0=NULL, kappa=1e6, discrepancy="varying",
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
-EBMtrend.modeldef <- function(theta, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE) {
+EBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL, 
+                              kappa=1e6, UsePhi=TRUE) {
   #
   #  Sets up the structure of a state space model inspired by 
   #  the structure of a simple energy balance model (EBM). Arguments:
@@ -2241,8 +2330,11 @@ EBMtrend.modeldef <- function(theta, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE) {
   #  m0       Optional vector of initial values for the state vector. 
   #           If NULL (the default) this is determined automatically
   #           from the model structure. 
+  #  C0       Optional covariance matrix for initialising the state
+  #           vector. If NULL, like m0 this is determined from the
+  #           model structure and from kappa. 
   #  kappa    "Large" value giving the variance used to initialise diffuse 
-  #           elements of the state vector. 
+  #           elements of the state vector. Ignored if C0 is non-NULL.
   #  UsePhi   Controls whether or not to include a thermal inertia 
   #           parameter in the model structure. 
   #
@@ -2262,10 +2354,16 @@ EBMtrend.modeldef <- function(theta, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE) {
     }
     init$m0 <- m0
   }
+  if (!is.null(C0)) { # Overwrite if the user supplied a value
+    if (!isTRUE(all(dim(C0)==nrow(GG)))) {
+      stop(paste("C0 should be a ",nrow(GG),"x",nrow(GG)," matrix",sep=""))
+    }
+    init$C0 <- C0
+  }
   list(FF=FF, GG=GG, V=V, W=W, JGG=JGG, X=as.matrix(Xt),m0=init$m0,C0=init$C0)
 }
 ######################################################################
-EBMtrendSmooth <- function(Y, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE, 
+EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE, 
                            prior.pars=NULL, messages=TRUE, 
                            Use.dlm=FALSE, debug=FALSE) {
   #
@@ -2298,8 +2396,9 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE,
   #  this to get an initial log-likelihood so as to scale the optimisation.
   #
   if (messages) cat("Carrying out initial local linear trend estimation ...\n")
-  SLLTModel0 <- SLLTSmooth(Y, messages=FALSE, Use.dlm=Use.dlm, 
-                           m0=m0[1:2], kappa=kappa, debug=debug)
+  SLLTModel0 <- 
+    SLLTSmooth(Y, messages=FALSE, Use.dlm=Use.dlm, m0=m0[1:2], 
+               C0=C0[1:2, 1:2], kappa=kappa, debug=debug)
   theta.init <- SLLTModel0$Theta$par
   par.names=c("log(sigsq)", "log(tausq)")
   if (UsePhi) {
@@ -2311,14 +2410,15 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE,
   #
   if (messages) cat("Estimating model parameters - please be patient ...\n")
   thetahat <- 
-    dlm.SafeMLE(theta.init, Y, EBMtrend.modeldef, Xt=Xt, m0=m0, kappa=kappa, 
-                prior.pars=prior.pars, UsePhi=UsePhi, hessian=TRUE, 
-                par.names=par.names, Use.dlm=Use.dlm, messages=messages,
-                debug=debug)
-  Model <- EBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, kappa=kappa, UsePhi=UsePhi)
+    dlm.SafeMLE(theta.init, Y, EBMtrend.modeldef, Xt=Xt, m0=m0, 
+                C0=C0, kappa=kappa, prior.pars=prior.pars, 
+                UsePhi=UsePhi, hessian=TRUE, par.names=par.names, 
+                Use.dlm=Use.dlm, messages=messages, debug=debug)
+  Model <- EBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
+                             kappa=kappa, UsePhi=UsePhi)
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    PrintDLMFit(thetahat)
+    summary.dlmMLE(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -2327,8 +2427,8 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, kappa=1e6, UsePhi=TRUE,
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
-EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, kappa, NRuns, 
-                                 Groups=NULL, UseAlpha=TRUE, 
+EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL, kappa, 
+                                 NRuns, Groups=NULL, UseAlpha=TRUE, 
                                  UsePhi=TRUE, constrain=TRUE) {
   #
   #  Sets up the structure of a state space model for an observed
@@ -2370,11 +2470,15 @@ EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, kappa, NRuns,
   #   m0         Optional vector of initial values for the state vector. 
   #              If NULL (the default) this is determined automatically
   #              from the model structure. 
+  #   C0         Optional covariance matrix for initialising the state
+  #              vector. If NULL, like m0 this is determined from the
+  #              model structure and from kappa. 
   #   kappa      "Large" value with which to initialise variances of
   #              diffuse components of state vector at time 0. Taking
   #              it too large can lead to numerical instability, 
   #              however. It should be several orders of magnitude 
-  #              larger than any of the model variances.
+  #              larger than any of the model variances. This is 
+  #              ignored if C0 is non-NULL.
   #   NRuns      Number of ensemble members
   #   Groups     Vector of length NRuns, indicating group membership. 
   #              This should be used if an ensemble contains multiple 
@@ -2457,12 +2561,18 @@ EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, kappa, NRuns,
     init$C0[7:nS, 7:nS] <- -kappa / NGroups
     diag(init$C0)[7:nS] <- diag(init$C0)[7:nS] + kappa
   }
+  if (!is.null(C0)) { # Overwrite if the user supplied a value
+    if (!isTRUE(all(dim(C0)==nrow(GG)))) {
+      stop(paste("C0 should be a ",nrow(GG),"x",nrow(GG)," matrix",sep=""))
+    }
+    init$C0 <- C0
+  }
   Consensus <- FF[2,]; Consensus[7] <- 0 # Coefficients to extract ensemble consensus
   list(FF=FF,GG=GG,V=V,W=W,JGG=JGG,X=as.matrix(Xt),
        m0=init$m0,C0=init$C0, Consensus=Consensus)
 }
 ######################################################################
-EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, kappa=1e6, 
+EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6, 
                               prior.pars=NULL, UseAlpha=TRUE, UsePhi=TRUE, 
                               constrain=TRUE, messages=TRUE, Use.dlm=FALSE, 
                               debug=FALSE) {
@@ -2501,8 +2611,8 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, kappa=1e6,
   #  messages Logical scalar controlling whether or not to print progress 
   #           to screen. 
   #   debug   Logical: argument passed to dlm routines to control
-  #           whether to use faster C code (the default) which can 
-  #           be buggy, or slower R code.
+  #           whether to use faster C code (the default), or slower 
+  #           R code which allows problem tracing. 
   #
   #  The function returns a list with three components: the first is the
   #  object containing results of the maximum likelihood parameter estimation, 
@@ -2512,29 +2622,32 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, kappa=1e6,
   #  Start by finding initial values for a numerical maximisation of the 
   #  likelihood. For the observed series these are obtained via a call to
   #  EBMtrendSmooth. For parameters that appear in the specification of the
-  #  ensemble consensus, from a fit of EBMtrendSmooth to the ensemble mean. 
-  #  For the additional member-specific drift terms, just use SLLT.IniPar 
-  #  to get a plausible initial value for sigsq.1.
+  #  ensemble consensus discrepancy, from a fit of EBMtrendSmooth to the 
+  #  difference between the ensemble mean and an estimate of the real-world
+  #  trend. For the additional member-specific drift terms, just use 
+  #  SLLT.IniPar to get a plausible initial value for sigsq.1.
   #
   NRuns <- ncol(Y)-1
   if (messages) cat("Finding starting values for maximum likelihood estimation ...\n")
   theta.init <- rep(NA, ifelse(UsePhi,8,6))
   theta.init[1] <- 1 # Initialise alpha to 1 (will remove this later if not needed)
   cur.priors <- prior.pars[if (UsePhi) c(2:3,7) else 2:3, ]
-  Model0 <- EBMtrendSmooth(Y[,1], Xt, m0=m0[1:3], kappa=kappa, UsePhi=UsePhi, 
-                           prior.pars=cur.priors, messages=FALSE, 
-                           Use.dlm=Use.dlm, debug=debug)
+  Model0 <- 
+    EBMtrendSmooth(Y[,1], Xt, m0=m0[1:3], C0=C0[1:3, 1:3], 
+                   kappa=kappa, UsePhi=UsePhi, prior.pars=cur.priors, 
+                   messages=FALSE,  Use.dlm=Use.dlm, debug=debug)
   theta.init[2:3] <- Model0$Theta$par[1:2] # sigsq.0 and tausq.0
   if (UsePhi) theta.init[7] <- Model0$Theta$par[3] # phi.0
-  EnsembleMean <- rowMeans(Y[,-1])
+  EnsembleMean <- EnsMean(Y, Groups)
+  Death.hat <- EnsembleMean-Model0$Smooth$s[-1,1] # Remove first element (time 0)
   IdxShift <- 1-as.numeric(UseAlpha) # Shifts indices in theta
   cur.priors <- prior.pars[(if (UsePhi) c(2,4,8) else c(2,4))-IdxShift,]
   cur.priors[1,1] <- cur.priors[1,1] - log(NRuns) # Suppress interannual variability in trend
-  Model0 <- EBMtrendSmooth(EnsembleMean, Xt, m0=m0[4:6], kappa=kappa, 
-                           UsePhi=UsePhi, prior.pars=cur.priors, 
-                           messages=FALSE, Use.dlm=Use.dlm, debug=debug)
-  theta.init[4] <- log(max(1e-12, # Slope innovation parameter
-                           exp(Model0$Theta$par[2]) - exp(theta.init[3])))
+  Model0 <- 
+    EBMtrendSmooth(Death.hat, Xt, m0=rep(0,3), C0=NULL, kappa=kappa, 
+                   UsePhi=UsePhi, prior.pars=cur.priors, 
+                   messages=FALSE, Use.dlm=Use.dlm, debug=debug)
+  theta.init[4] <- Model0$Theta$par[2] # Slope innovation parameter
   if (UsePhi) theta.init[8] <- Model0$Theta$par[3]    
   theta.init[5:6] <- SLLT.IniPar(Y[,-1]-EnsembleMean)
   #
@@ -2547,17 +2660,19 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, kappa=1e6,
   if (UsePhi) par.names <- c(par.names, "logit(phi[0])", "logit(phi[1])")
   if (!UseAlpha) { theta.init <- theta.init[-1]; par.names <- par.names[-1] }
   thetahat <- 
-    dlm.SafeMLE(theta.init, Y, EnsEBMtrend.modeldef, Xt=Xt, m0=m0, kappa=kappa, 
-                prior.pars=prior.pars, NRuns=NRuns, Groups=Groups, 
-                constrain=constrain, UseAlpha=UseAlpha, UsePhi=UsePhi, 
-                hessian=TRUE, par.names=par.names, Use.dlm=Use.dlm, 
-                messages=messages, debug=debug)
-  Model <- EnsEBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, kappa=kappa, 
-                                NRuns=NRuns, Groups=Groups, UseAlpha=UseAlpha, 
-                                UsePhi=UsePhi, constrain=constrain)  
+    dlm.SafeMLE(theta.init, Y, EnsEBMtrend.modeldef, Xt=Xt, m0=m0, 
+                C0=C0, kappa=kappa, prior.pars=prior.pars, NRuns=NRuns, 
+                Groups=Groups, constrain=constrain, UseAlpha=UseAlpha, 
+                UsePhi=UsePhi, hessian=TRUE, par.names=par.names, 
+                Use.dlm=Use.dlm, messages=messages, debug=debug)
+  Model <- 
+    EnsEBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
+                         kappa=kappa, NRuns=NRuns, Groups=Groups, 
+                         UseAlpha=UseAlpha, UsePhi=UsePhi, 
+                         constrain=constrain)  
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    PrintDLMFit(thetahat)
+    summary.dlmMLE(thetahat)
   }
   #
   #  Kalman Smoother, and return result
@@ -2567,8 +2682,9 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, kappa=1e6,
 }
 ######################################################################
 EnsEBM2waytrend.modeldef <- 
-  function(theta, Xt, m0=NULL, kappa, Groups, interactions="none", 
-           UseAlpha=TRUE, UsePhi=TRUE, constrain=TRUE) {
+  function(theta, Xt, m0=NULL, C0=NULL, kappa, Groups, 
+           interactions="none", UseAlpha=TRUE, UsePhi=TRUE, 
+           constrain=TRUE) {
     #
     #  Sets up the structure of a state space model for an observed
     #  time series and a regional ensemble (i.e. containing runs
@@ -2622,11 +2738,14 @@ EnsEBM2waytrend.modeldef <-
     #  m0     Optional vector of initial values for the state vector. 
     #         If NULL (the default) this is determined automatically
     #         from the model structure. 
+    #  C0     Optional covariance matrix for initialising the state
+    #         vector. If NULL, like m0 this is determined from the
+    #         model structure and from kappa. 
     #  kappa  "Large" value with which to initialise variances of diffuse
     #         components of state vector at time 0. Taking it too large 
     #         can lead to numerical instability, however. It should be 
     #         several orders of magnitude larger than any of the model 
-    #         variances.
+    #         variances. It is ignored if C0 is non-NULL.
     #  interactions Logical scalar, indicating which RCM:GCM "interaction"
     #         terms to include in the state vector. Options are "none" to 
     #         exclude them completely, "all" to include all of them
@@ -2790,6 +2909,12 @@ EnsEBM2waytrend.modeldef <-
       init$C0[Wanted.Els+1, Wanted.Els+1] <- 
         kappa * W[Wanted.Els, Wanted.Els] / MedVal
     }
+    if (!is.null(C0)) { # Overwrite if the user supplied a value
+      if (!isTRUE(all(dim(C0)==nrow(GG)))) {
+        stop(paste("C0 should be a ",nrow(GG),"x",nrow(GG)," matrix",sep=""))
+      }
+      init$C0 <- C0
+    }
     Consensus <- FF[2,]; Consensus[7:ncol(FF)] <- 0 # Coefficients to extract ensemble consensus
     list(FF=FF, GG=GG, V=V, W=W, JGG=JGG, X=as.matrix(Xt), 
          m0=init$m0, C0=init$C0, Consensus=Consensus)
@@ -2813,6 +2938,10 @@ EnsEBM2waytrend.NegLL <-
     #   and to write this model-specific "safe" log-likelihood 
     #   evaluation to bypass the problematic do.call(). 
     #
+    #   UPDATE FOR VERSION 0.0-4: THIS ROUTINE SHOULD NOW BE
+    #   REDUNDANT. IT IS RETAINED FOR NOW, IN CASE IT NEEDS
+    #   TO BE REINSTATED.
+    #
     Model <- 
       EnsEBM2waytrend.modeldef(theta, Xt=Xt, m0=m0, kappa=kappa, 
                               Groups=Groups, interactions=interactions,
@@ -2833,9 +2962,9 @@ EnsEBM2waytrend.NegLL <-
   }
 ######################################################################
 EnsEBM2waytrendSmooth <- 
-  function(Y, Xt, m0=NULL, kappa=1e6, Groups, prior.pars=NULL, 
+  function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, Groups, prior.pars=NULL, 
            interactions="none", UseAlpha=TRUE, UsePhi=TRUE, 
-           constrain=TRUE, messages=TRUE, Use.dlm=FALSE, debug=TRUE) {
+           constrain=TRUE, messages=TRUE, Use.dlm=FALSE, debug=FALSE) {
   #
   #  Fits and applies a model of the form defined by EnsEBM2waytrend.modeldef.
   #  Arguments: 
@@ -2890,8 +3019,7 @@ EnsEBM2waytrendSmooth <-
   #           is currently supported for this model, and it does not 
   #           currently call dlm.SafeMLE() due to a memory leak in the C 
   #           code for dlmLL. 
-  #   debug   As in dlmMLE. Only TRUE is currently supported for this model,
-  #           until the memory leak in the dlm package is fixed. 
+  #   debug   As in dlmMLE. 
   #
   #  The function returns a list with three components: the first is the 
   #  object containing results of the maximum likelihood parameter 
@@ -2902,14 +3030,17 @@ EnsEBM2waytrendSmooth <-
   #  Start by finding initial values for a numerical maximisation of the 
   #  likelihood. For the observed series these are obtained as in 
   #  EBMtrendSmooth. The variance of slope innovations for the shared
-  #  drift is initialised from the corresponding variance from a local 
-  #  linear trend fitted to the ensemble mean, with the observation variance
-  #  subtracted. For the additional member-specific drift terms, use 
-  #  SLLT.IniPar to get some plausible initial values. 
+  #  drift is initialised from the corresponding variance from an EBM
+  #  mimic fitted to the difference between the estimated mean for the 
+  #  observations and the ensemble mean. For the additional 
+  #  member-specific drift terms, use SLLT.IniPar to get some plausible 
+  #  initial values. 
   #
-  if (!debug | Use.dlm) {
-    stop("Currently, routine can only be used with debug=TRUE and Use.dlm=FALSE")
-  }
+  ### NEXT TRAP SHOULD BE REDUNDANT AS OF V0.0-4, PROVIDING PATCHED
+  ### VERSION OF DLM LIBRARY IS USED
+  ### if (!debug | Use.dlm) {
+  ###  stop("Currently, routine can only be used with debug=TRUE and Use.dlm=FALSE")
+  ### }
   if (messages) cat("Finding starting values for maximum likelihood estimation ...\n")
   theta.init <- rep(NA, ifelse(UsePhi,8,6))
   theta.init[1] <- 1 # Initialise alpha to 1 (will remove this later if not needed)
@@ -2919,15 +3050,16 @@ EnsEBM2waytrendSmooth <-
                            Use.dlm=Use.dlm)
   theta.init[2:3] <- Model0$Theta$par[1:2] # sigsq.0 and tausq.0
   if (UsePhi) theta.init[7] <- Model0$Theta$par[3] # phi.0
-  EnsembleMean <- rowMeans(Y[,-1])
+  EnsembleMean <- EnsMean(Y, Groups)
+  Death.hat <- EnsembleMean-Model0$Smooth$s[-1,1] # Discard first element of Model0 (time 0)
   IdxShift <- 1-as.numeric(UseAlpha) # Shifts indices in theta
   cur.priors <- prior.pars[(if (UsePhi) c(2,4,8) else c(2,4))-IdxShift,]
   cur.priors[1,1] <- cur.priors[1,1] - log(ncol(Y)-1) # Suppress interannual variability in trend
-  Model0 <- EBMtrendSmooth(EnsembleMean, Xt, m0=m0[4:6], kappa=kappa, 
-                           UsePhi=UsePhi, prior.pars=cur.priors, 
-                           messages=FALSE, Use.dlm=Use.dlm)
-  theta.init[4] <- log(max(1e-12, # Slope innovation parameter
-                           exp(Model0$Theta$par[2]) - exp(theta.init[3])))
+  Model0 <- 
+    EBMtrendSmooth(Death.hat, Xt, m0=rep(0,3), C0=NULL, kappa=kappa, 
+                   UsePhi=UsePhi, prior.pars=cur.priors, messages=FALSE, 
+                   Use.dlm=Use.dlm)
+  theta.init[4] <- Model0$Theta$par[2]
   if (UsePhi) theta.init[8] <- Model0$Theta$par[3]    
   theta.init[5:6] <- SLLT.IniPar(Y[,-1]-EnsembleMean)
   #
@@ -2941,92 +3073,94 @@ EnsEBM2waytrendSmooth <-
   if (!UseAlpha) { theta.init <- theta.init[-1]; par.names <- par.names[-1] }
   ###
   ###   Next command to be reinstated when dlm memory leak is fixed
+  ###   REINSTATED AS OF V0.0-4
   ###
-  ### thetahat <-  dlm.SafeMLE(theta.init, Y, EnsEBM2waytrend.modeldef, 
-  ###                         Xt=Xt, m0=m0, kappa=kappa, prior.pars=prior.pars, 
-  ###                         Groups=Groups, interactions=interactions, 
-  ###                         UseAlpha=UseAlpha, UsePhi=UsePhi, 
-  ###                         constrain=constrain, debug=debug,
-  ###                         hessian=TRUE, par.names=par.names, 
-  ###                         Use.dlm=Use.dlm, messages=messages)
+  thetahat <- 
+    dlm.SafeMLE(theta.init, Y, EnsEBM2waytrend.modeldef, Xt=Xt, m0=m0, 
+                C0=C0, kappa=kappa, prior.pars=prior.pars, 
+                Groups=Groups, interactions=interactions, 
+                UseAlpha=UseAlpha, UsePhi=UsePhi, constrain=constrain, 
+                debug=debug, hessian=TRUE, par.names=par.names, 
+                Use.dlm=Use.dlm, messages=messages)
+  
+  ###   <<<< TEMPORARY WORKAROUND STARTS - RETAIN FOR THE MOMENT
   ###
-  ###   <<<< TEMPORARY WORKAROUND STARTS
-  ###
-  NotDone <- TRUE
-  BatchSize <- 20
-  StepMax <- 1
-  while(NotDone) {
-    LL.init <-
-      EnsEBM2waytrend.NegLL(theta.init, Y, Xt, m0=m0, kappa=kappa,
-                          prior.pars=prior.pars, Groups=Groups,
-                          interactions=interactions, UseAlpha=UseAlpha,
-                          UsePhi=UsePhi, constrain=constrain, debug=debug)
-      z <- try(nlm(EnsEBM2waytrend.NegLL, p=theta.init, Y=Y, Xt=Xt,
-                 m0=m0, kappa=kappa, prior.pars=prior.pars, Groups=Groups,
-                 interactions=interactions, UseAlpha=UseAlpha, UsePhi=UsePhi,
-                 constrain=constrain, debug=debug, hessian=FALSE,
-                 BigVal=LL.init+1e3, # Thinking about keeping gradient calculations stable
-                 typsize=pmax(abs(theta.init), 0.1), fscale=abs(LL.init),
-                 stepmax=StepMax, iterlim=BatchSize, gradtol=1e-4),
-             silent = TRUE)
-    if (isTRUE(class(z))=="try-error") { # When nlm throws an Inf
-      BatchSize <- BatchSize / 2
-    } else if (z$code %in% 4:5) { # Iteration limit exceeded: move theta.init & try again
-      theta.init <- z$estimate
-      if (z$code==5) StepMax <- 1.2*StepMax # Increase StepMax if it was too small
-    } else NotDone <- FALSE
-  }
-  names(z)[names(z)=="minimum"] <- "value"
-  names(z)[names(z)=="estimate"] <- "par"
-  names(z)[names(z)=="iterations"] <- "counts"
-  z$convergence <- ifelse(z$code %in% 1:2, 0, ifelse(z$code==4, 1, 2))
-  if (z$convergence == 0) {
-    if (messages) cat("numerical optimiser reports successful convergence\n")
-  } else {
-    warning("numerical optimiser reports convergence problem")
-  }
-  if (!is.null(par.names)) {
-    names(z$par) <- par.names
-  }
-  z$hessian <- hessian(EnsEBM2waytrend.NegLL, x=z$par, Y=Y, Xt=Xt,
-                       m0=m0, kappa=kappa, prior.pars=prior.pars,
-                       Groups=Groups, interactions=interactions,
-                       UseAlpha=UseAlpha, UsePhi=UsePhi,
-                       constrain=constrain, debug=debug,
-                       BigVal=z$value+1e-4)
-  #
-  #   Check for positive definiteness; if the hessian isn't PD
-  #   then tweak it so that it *is*. Do the check using both
-  #   chol and eigen, because both may be used later (and they
-  #   give slightly different results!)
-  #
-  z$HessFail <- isTRUE(class(try(chol(z$hessian), silent=TRUE)) == "try-error")
-  if (!z$HessFail) z$HessFail <- !all(eigen(z$hessian)$values > 0)
-  if (z$HessFail) {
-    warning("Hessian isn't positive definite: shrinking eigenvalues towards their mean")
-    HessPD <- z$hessian
-    EigenVals <- eigen(HessPD)$values
-    while(min(EigenVals) < 0) {
-      HessPD <- 0.95*HessPD + 
-        ( (0.05*sum(EigenVals) / nrow(HessPD)) * diag(rep(1, nrow(HessPD))) )
-      EigenVals <- eigen(HessPD)$values
-    }
-    z$hessian <- HessPD
-  }
-  if (!is.null(par.names)) row.names(z$hessian) <- colnames(z$hessian) <- par.names
-  if (!is.null(prior.pars)) z$prior.pars <- prior.pars
-  thetahat <- z
+  ### NotDone <- TRUE
+  ### BatchSize <- 20
+  ### StepMax <- 1
+  ### while(NotDone) {
+  ###   LL.init <-
+  ###     EnsEBM2waytrend.NegLL(theta.init, Y, Xt, m0=m0, kappa=kappa,
+  ###                         prior.pars=prior.pars, Groups=Groups,
+  ###                         interactions=interactions, UseAlpha=UseAlpha,
+  ###                         UsePhi=UsePhi, constrain=constrain, debug=debug)
+  ###     z <- try(nlm(EnsEBM2waytrend.NegLL, p=theta.init, Y=Y, Xt=Xt,
+  ###                m0=m0, kappa=kappa, prior.pars=prior.pars, Groups=Groups,
+  ###                interactions=interactions, UseAlpha=UseAlpha, UsePhi=UsePhi,
+  ###                constrain=constrain, debug=debug, hessian=FALSE,
+  ###                BigVal=LL.init+1e3, # Thinking about keeping gradient calculations stable
+  ###                typsize=pmax(abs(theta.init), 0.1), fscale=abs(LL.init),
+  ###                stepmax=StepMax, iterlim=BatchSize, gradtol=1e-4),
+  ###            silent = TRUE)
+  ###   if (isTRUE(class(z))=="try-error") { # When nlm throws an Inf
+  ###     BatchSize <- BatchSize / 2
+  ###   } else if (z$code %in% 4:5) { # Iteration limit exceeded: move theta.init & try again
+  ###     theta.init <- z$estimate
+  ###     if (z$code==5) StepMax <- 1.2*StepMax # Increase StepMax if it was too small
+  ###   } else NotDone <- FALSE
+  ### }
+  ### names(z)[names(z)=="minimum"] <- "value"
+  ### names(z)[names(z)=="estimate"] <- "par"
+  ### names(z)[names(z)=="iterations"] <- "counts"
+  ### z$convergence <- ifelse(z$code %in% 1:2, 0, ifelse(z$code==4, 1, 2))
+  ### if (z$convergence == 0) {
+  ###   if (messages) cat("numerical optimiser reports successful convergence\n")
+  ### } else {
+  ###   warning("numerical optimiser reports convergence problem")
+  ### }
+  ### if (!is.null(par.names)) {
+  ###   names(z$par) <- par.names
+  ### }
+  ### z$hessian <- hessian(EnsEBM2waytrend.NegLL, x=z$par, Y=Y, Xt=Xt,
+  ###                      m0=m0, kappa=kappa, prior.pars=prior.pars,
+  ###                      Groups=Groups, interactions=interactions,
+  ###                      UseAlpha=UseAlpha, UsePhi=UsePhi,
+  ###                      constrain=constrain, debug=debug,
+  ###                      BigVal=z$value+1e-4)
+  ### #
+  ### #   Check for positive definiteness; if the hessian isn't PD
+  ### #   then tweak it so that it *is*. Do the check using both
+  ### #   chol and eigen, because both may be used later (and they
+  ### #   give slightly different results!)
+  ### #
+  ### z$HessFail <- isTRUE(class(try(chol(z$hessian), silent=TRUE)) == "try-error")
+  ### if (!z$HessFail) z$HessFail <- !all(eigen(z$hessian)$values > 0)
+  ### if (z$HessFail) {
+  ###   warning("Hessian isn't positive definite: shrinking eigenvalues towards their mean")
+  ###   HessPD <- z$hessian
+  ###   EigenVals <- eigen(HessPD)$values
+  ###   while(min(EigenVals) < 0) {
+  ###     HessPD <- 0.95*HessPD + 
+  ###       ( (0.05*sum(EigenVals) / nrow(HessPD)) * diag(rep(1, nrow(HessPD))) )
+  ###     EigenVals <- eigen(HessPD)$values
+  ###   }
+  ###   z$hessian <- HessPD
+  ### }
+  ### if (!is.null(par.names)) row.names(z$hessian) <- colnames(z$hessian) <- par.names
+  ### if (!is.null(prior.pars)) z$prior.pars <- prior.pars
+  ### thetahat <- z
   ###
   ###   <<<< TEMPORARY WORKAROUND ENDS
   ###
   Model <- 
-    EnsEBM2waytrend.modeldef(thetahat$par, Xt=Xt, m0=m0, kappa=kappa, 
-                             Groups=Groups, interactions=interactions, 
+    EnsEBM2waytrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
+                             kappa=kappa, Groups=Groups, 
+                             interactions=interactions, 
                              UseAlpha=UseAlpha, UsePhi=UsePhi, 
                              constrain=constrain)  
   if (messages) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
-    PrintDLMFit(thetahat)
+    summary.dlmMLE(thetahat)
   }
   #
   #  Kalman Smoother, and return result

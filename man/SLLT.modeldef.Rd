@@ -5,13 +5,14 @@
 \description{Sets up the structure of a "smooth local linear trend" state space
 model for a single time series.}
 \usage{
-SLLT.modeldef(theta, kappa = 1e+06, m0 = NULL)
+SLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{theta}{Vector of length 2: \code{theta[1]} is the log of the "measurement error" variance, and \code{theta[2]} is the log of the innovation variance on the slope process.}
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
-  \item{kappa}{Initialisation variance for diffuse elements of the state vector.}
+  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
+  \item{kappa}{Initialisation variance for diffuse elements of the state vector. Ignored if \code{C0} is non-\code{NULL}.}
 }
 \details{The model is defined by the equations
 \deqn{Y(t) = \mu(t) + \varepsilon(t)}{Y(t) = mu[t] + e[t]}

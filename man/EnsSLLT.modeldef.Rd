@@ -4,7 +4,7 @@
 \title{Postprocessing an exchangeable ensemble of time series using smooth local linear trends}
 \description{ets up the structure of a simple "Ensemble smooth local linear trend" state space time series model for an observed time series and exchangeable ensemble.}
 \usage{
-EnsSLLT.modeldef(theta, m0 = NULL, kappa = 1e+06, NRuns, 
+EnsSLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06, NRuns, 
                  Groups = NULL, discrepancy = "varying", 
                  UseAlpha = TRUE, constrain = TRUE)
 }
@@ -12,7 +12,8 @@ EnsSLLT.modeldef(theta, m0 = NULL, kappa = 1e+06, NRuns,
 \arguments{
   \item{theta}{Parameter vector. See "Details".}
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
-  \item{kappa}{Initialisation variance for diffuse elements of the state vector.}
+  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
+  \item{kappa}{Initialisation variance for diffuse elements of the state vector. Ignored if \code{C0} is non-\code{NULL}.}
   \item{NRuns}{Number of ensemble members}
   \item{Groups}{Vector indicating group membership for each ensemble member. This should be used if an ensemble contains multiple runs from one or more simulators (climate models): in this case the elements of \code{Groups} should be integers between 1 and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL} (the default), each member is assumed to come from a different simulator. 
 }
@@ -38,5 +39,9 @@ If \code{discrepancy="constant"} and \code{UseAlpha} is \code{FALSE} then \code{
 If \code{UseAlpha} is \code{FALSE} then \eqn{\alpha}{alpha} is fixed to 1 and omitted from \code{theta} --- so that in this case \code{theta[1]} is \eqn{\log(\sigma^{2}_{0})}{log(sigsq[0])}, \code{theta[2]} is \eqn{\log(\tau^{2}_{0})}{log(tausq[0])} etc. This argument makes no difference to the results if \code{discrepancy="constant"}. 
 }
 \value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.}
+
+\note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
+
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
+
 \seealso{\code{\link{SLLT.modeldef}}, \code{\link{EnsEBMtrend.modeldef}}}
