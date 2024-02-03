@@ -4,13 +4,14 @@
 \title{Smooth Local Linear Trend modelling for a single time series}
 \description{Fits and applies a "smooth local linear trend" (SLLT) model to a univariate time series.}
 \usage{
-SLLTSmooth(Y, m0 = NULL, kappa = 1e+06, prior.pars = NULL, 
+SLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, prior.pars = NULL, 
            messages = TRUE, Use.dlm = FALSE, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{Y}{Vector containing a univariate time series.}
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
+  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Variance used to initialise diffuse elements of the state vector.}
   \item{prior.pars}{Optional \code{2*2} matrix containing means and standarddeviations of Gaussian prior distributions for the log variance parameters: in this case, maximum \emph{a posteriori} (MAP) estimation is done.}
   \item{messages}{Controls printing of progress details to screen.}

@@ -10,7 +10,7 @@ EnsMean(Data, EnsStruct=NULL, na.rm=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{Data}{Data frame containing time in column 1, an observed series in column 2 and ensemble members in the remaining columns. \strong{NB} columns 1 and 2 is ignored: the structure of this argument is consistent with that of the \code{Data} argument for other routines in the \pkg{TimSPEC} package.
+  \item{Data}{Data frame containing an observed series in column 1 and ensemble members in the remaining columns. \strong{NB} column 1 is ignored: the structure of this argument is consistent with that of the \code{Data} argument for other routines in the \pkg{TimSPEC} package.
 }
   \item{EnsStruct}{A vector or matrix specifying any structure in the         ensemble, with an element (resp. row, in the matrix case) for each ensemble member and containing the codes of any grouping variables defining the structure. In the matrix case, each column corresponds to a different grouping variable. The intention is that the \code{Groups} argument to, for example, \code{\link{EnsEBMtrendSmooth}} or \code{\link{EnsEBM2waytrendSmooth}} could be used here.
 }

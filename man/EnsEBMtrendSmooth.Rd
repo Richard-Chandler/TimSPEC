@@ -5,7 +5,7 @@
 }
 \description{Fits a model of the form defined by \code{\link{EnsEBMtrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals.}
 \usage{
-EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06, 
+EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, C0=NULL, kappa = 1e+06, 
                   prior.pars = NULL, UseAlpha = TRUE, UsePhi = TRUE, 
                   constrain = TRUE, messages = TRUE, Use.dlm = FALSE, 
                   debug = FALSE)
@@ -17,6 +17,7 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06,
   \item{Groups}{Vector indicating group membership for each ensemble member. This should be used if an ensemble contains multiple runs from one or more simulators (climate models): in this case the elements of \code{Groups} should be integers between 1 and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL} (the default), each member is assumed to come from a different simulator. 
 }
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
+  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Variance used to initialise diffuse elements of the state vector.}
   \item{prior.pars}{Optional 2-column matrix containing the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertias). If this is provided, maximum \emph{a posteriori} (or penalised maximum likelihood) estimation is used; otherwise just standard maximum likelihood.}
   \item{UseAlpha}{Logical scalar indicating whether or not to include a scaling factor (\eqn{\alpha}{alpha} in the "Details" section of \code{\link{EnsEBMtrend.modeldef}}) when relating the ensemble consensus trend to that in the real climate system.  If \code{FALSE}, the value of \eqn{\alpha}{alpha} is set to 1.}
@@ -32,6 +33,9 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, kappa = 1e+06,
 \item{Model}{An object of class \code{dlm} containing the fitted model itself}
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
 }
+
+\note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
+
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{EnsEBMtrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
 
