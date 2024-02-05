@@ -13,7 +13,7 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE,
   \item{Y}{Vector containing a univariate time series.}
   \item{Xt}{Vector containing the corresponding forcings (denoted as \eqn{f(t)} in the documentation for \code{\link{EBMtrend.modeldef}}).}
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
-  \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
+    \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Initialisation variance for diffuse elements of the state vector.}
   \item{UsePhi}{Controls whether or not to use the full model including a thermal inertia parameter.}
   \item{prior.pars}{Optional \code{3*2} matrix. If present, it is taken to contain the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertia).}
@@ -33,6 +33,7 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE,
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{\code{\link{EnsEBMtrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
+
 \examples{
 ## Load package data 
 data(SSP585data)
