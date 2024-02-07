@@ -69,7 +69,7 @@ EnsSLLTFit <- EnsSLLTSmooth(as.matrix(GlobalTemps585[,-1]),
 ## Examine fitted mimic, and plot
 summary(EnsSLLTFit$Theta)
 SmoothPlot(GlobalTemps585, EnsSLLTFit, DatColours=c("black", "coral3"),
-           EnsStruct=as.numeric(as.factor(GCMIDs)), 
+           Groups=as.numeric(as.factor(GCMIDs)), 
            PredColours=c("darkblue", "darkgoldenrod"), PlotConsensus=TRUE, 
            EnsTransp=0.2)
 }

@@ -4,7 +4,7 @@
 \title{Visualising ensembles of climate projection time series}
 \description{Plots observed time series (with a single value per year), individual ensemble members and ensemble mean. }
 \usage{
-PlotEnsTS(Data, Colours, EnsStruct=NULL, na.rm=TRUE, EnsTransp = 1,  
+PlotEnsTS(Data, Colours, Groups=NULL, na.option=NULL, EnsTransp = 1,  
           Types = c(1, 1), Units = expression(degree * "C"), 
           plot = TRUE, add = FALSE, ...)
 }
@@ -12,8 +12,8 @@ PlotEnsTS(Data, Colours, EnsStruct=NULL, na.rm=TRUE, EnsTransp = 1,
 \arguments{
   \item{Data}{Matrix or data frame containing time (i.e. year) in column 1, real-world series in column 2 and ensemble members in the remaining columns.}
   \item{Colours}{Vector containing the colour specifications for the observations and ensemble members respectively. If of length 2 then the two colours will be used to represent the observations and ensemble members, respectively. If of length \code{ncol(Data)} then the first element will be used for the observations, the second for the ensemble mean and the remainder for the individual ensemble members.}
-  \item{EnsStruct}{Vector or matrix representing ensemble structure, used to control calculation of the ensemble mean series. See \code{\link{EnsMean}} for details.}
-  \item{na.rm}{Controls handling of missing values when calculating the ensemble mean series. See \code{\link{EnsMean}} for details.}
+  \item{Groups}{Vector or matrix representing ensemble structure, used to control calculation of the ensemble mean series. See \code{\link{EnsMean}} for details.}
+  \item{na.option}{Controls handling of missing values when calculating the ensemble mean series. See \code{\link{EnsMean}} for details.}
   \item{EnsTransp}{Transparency (alpha) value to use when plotting the ensemble members. Values close to 1 are opaque, those close to 0 are more transparent.}
   \item{Types}{Vector containing the line types to use for observations and ensemble members respectively. Specification as for \code{Cols}, defaults to \code{c(1,1)} i.e. solid lines throughout. }
   \item{Units}{Length-1 character vector, used to label the vertical axis of the plot. Default value is appropriate for plots of temperature in degrees Celsius.}
@@ -52,10 +52,10 @@ PlotEnsTS(GlobalTemps585,
 legend("topleft", lwd=c(3,3,rep(1, 5)), col=c("black", "darkred", GCMCols),
   legend=c("Observations", "Ensemble mean", names(GCMCols)), ncol=2)
 
-## And using the EnsStruct argument to represent the mean of the GCMs
+## And using the Groups argument to represent the mean of the GCMs
 ## rather than that of the ensemble members
 
-PlotEnsTS(GlobalTemps585, EnsStruct=GCMIDs,
+PlotEnsTS(GlobalTemps585, Groups=GCMIDs,
   Colours=c("black", "darkred", GCMCols[GCMIDs]),  
   main="Observed and simulated global mean temperatures, 1950-2100")
 legend("topleft", lwd=c(3,3,rep(1, 5)), col=c("black", "darkred", GCMCols),
