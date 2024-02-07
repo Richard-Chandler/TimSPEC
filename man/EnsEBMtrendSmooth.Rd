@@ -71,6 +71,7 @@ EnsEBMFit <-
 ## Examine fitted mimic, and plot
 summary(EnsEBMFit$Theta)
 SmoothPlot(GlobalTemps585, EnsEBMFit, DatColours=c("black", "coral3"),
+           Groups=as.numeric(as.factor(GCMIDs)), 
            PredColours=c("darkblue", "darkgoldenrod"), PlotConsensus=TRUE, 
            EnsTransp=0.2)
 }
