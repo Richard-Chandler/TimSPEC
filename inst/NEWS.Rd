@@ -1,6 +1,11 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
-\section{Changes in version 0.0-4 (2024-01-24)}{
+\section{Changes in version 0.0-5 (2024-02-07)}{
+  \itemize{
+    \item{Amended \code{EnsMean} function to cope with a broader range of missing value patterns, and renamed some of its arguments to reflect this and for consistency with object names elsewhere in the package.}
+  }
+}
+\section{Changes in version 0.0-4 (2024-01-29)}{
   \itemize{
   \item{Added \code{EnsMean} routine with \code{EnsStruct} and \code{na.rm} options; amended \code{PlotEnsTS} and other routines to use this, thus allowing more flexible calculation of ensemble means.}
   \item{Improved calculation of initial values for maximum-likelihood / maximum a posteriori estimation in \code{Ens...} mimics.}
