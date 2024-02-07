@@ -36,6 +36,8 @@
 # EnsEBMtrendSmooth     now for simultaneous analysis of an "observed"
 #                       time series together with a set of exchangeeable
 #                       ensemble members.
+# EnsMean               Calculates mean series for an ensemble, possibly
+#                       accounting for ensemble structure. 
 # EnsSLLT.modeldef,     Analysis of observed time series and exchangeable
 # EnsSLLT0.modeldef,    ensemble members, using a smooth local linear
 # EnsSSLLTSmooth,       trend model. The difference between the two modeldef
@@ -107,7 +109,7 @@ covxfrm <- function(covmat,A) {
   A %*% covmat %*% t(A) 
 }
 ######################################################################
-EnsMean <- function(Data, EnsStruct=NULL, na.rm=TRUE) {
+EnsMean <- function(Data, Groups=NULL, na.option=NULL) {
   #
   #  Calculates an ensemble mean series from its members. Arguments: 
   #
@@ -116,59 +118,115 @@ EnsMean <- function(Data, EnsStruct=NULL, na.rm=TRUE) {
   #         NB column 2 is ignored: it's part of the argument
   #         for consistency with other routines in the TimSPEC
   #         package.
-  #  EnsStruct A vector or matrix specifying any structure in the
+  #  Groups A vector or matrix specifying any structure in the
   #         ensemble, with a row for each ensemble member and
   #         (in the matrix case) columns representing the 
   #         codes of any grouping variables defining the structure.
-  #         The intention is that the Groups argument to, for
-  #         example, EnsEBMtrendSmooth or EnsEBM2waytrendSmooth
-  #         could be used here.
-  #  na.rm  Remove missing ensemble members when calculating the
-  #         mean? If TRUE (the default), this is done separately
-  #         for each time point - hence allowing for ensembles
-  #         including time series of different lengths
+  #         This corresponds to the Groups argument in, for
+  #         example, EnsEBMtrendSmooth or EnsEBM2waytrendSmooth.
+  #  na.option  Controls the treatment of missing ensemble members.
+  #         Options are "na.rm" (remove NA cases prior to the 
+  #         calculations), "na.impute" (see below) or "na.pass"
+  #         (propagate the NAs through the calculations). 
+  #         mean? The default behaviour corresponds to "na.rm"
+  #         if Groups is NULL, and "na.impute" otherwise.
   #
   #  The function returns a vector containing the computed series.
-  #  If EnsStruct is NULL (the default) then this series is the 
+  #  If Groups is NULL (the default) then this series is the 
   #  overall mean of the ensemble members (subject to the 
   #  treatment of missing values according to the value of 
-  #  na.rm). Otherwise, the series corresponds to the 
+  #  na.option). Otherwise, the series corresponds to the 
   #  sequence of intercepts in ANOVA models fitted to the 
-  #  ensemble members at each time point, with factors 
-  #  defined by the column(s) of EnsStruct and using 
-  #  sum-to-zero constraints to ensure that the intercept
-  #  has the desired interpretation as a mean of the 
-  #  simulators or simulator combinations.
+  #  ensemble members at each time point, with factors defined
+  #  by the column(s) of Groups and using sum-to-zero 
+  #  constraints to ensure that the intercept has the desired
+  #  interpretation as a mean of the simulators or simulator 
+  #  combinations.
+  #
+  #  If na.option is "na.rm" then the missing value patterns
+  #  are processed separately at each time point. This can 
+  #  lead to discontinuities in the calculated ensemble mean
+  #  series if the ensemble members cover different periods, 
+  #  especially in structured ensembles where one simulator
+  #  has been run for a slightly different time period from
+  #  the remainder. In this case, the "na.impute" option may 
+  #  be preferable. With this option, means are computed
+  #  after imputing any missing values using an additive ANOVA
+  #  model with effects corresponding to ensemble member
+  #  and to the time variable (treated as a factor). 
   #
   ######################################################################
-  if (is.null(EnsStruct)) {
-    z <- rowMeans(Data[,-1], na.rm=na.rm)
+  y <- t(as.matrix(Data[,-1])) # Initial data matrix: each row is a member
+  z <- rep(NA, ncol(y)) # Storage for final result
+  #
+  #   Can have time points with no ensemble members: exclude
+  #   these from calculations
+  #
+  NoData <- apply(y, MARGIN=2, FUN=function(x) all(is.na(x)))
+  y <- y[,!NoData]
+  #
+  #   Do imputation if requested. It's based on the algebraic
+  #   computation for a 2-way additive ANOVA which is 
+  #
+  #        Y.. + (Yi.-Y..) + (Y.j-Y..) = Yi. + (Y.j-Y..),
+  #
+  #   but estimating each term using the most complete set of
+  #   data possible.
+  #
+  if ( (is.null(Groups) & "na.impute" %in% na.option) |
+       (!is.null(Groups) & ("na.impute" %in% na.option | is.null(na.option))) ) {
+    GrpMeans <- rowMeans(y, na.rm=TRUE) # Ensemble member effects
+    TimeEffect <- scale(colMeans(y, na.rm=TRUE), scale=FALSE)
+    Fitted <- outer(GrpMeans, TimeEffect, "+")[,,1] # Drop final redundant direction
+    y[is.na(y)] <- Fitted[is.na(y)]
+  }
+  #
+  #   Now we have the data from which the means can be calculated
+  #
+  if (is.null(Groups)) { # Unstructured case: "na.pass" will lead to NAs
+    na.rm <- (is.null(na.option) | "na.rm" %in% na.option)
+    z[!NoData] <- colMeans(y, na.rm=na.rm)
   } else {
-    GrpFac <- apply(as.matrix(EnsStruct), MARGIN=2, FUN=as.factor,
-                    simplify=FALSE)
-    names(GrpFac) <- paste("V",1:length(GrpFac),sep="")
-    GrpFac <- list2DF(GrpFac)
-    OldOpt <- options("contrasts")$contrasts # Temporary redefinition
-    options(contrasts=c("contr.sum", "contr.poly"))
     #
-    #   Next lines are tricky: putting GrpFac directly into lm
-    #   seems to lose information on factor levels for some reason, 
-    #   so construct the model matrix directly. Also need to 
-    #   handle time points for which all ensemble members are 
-    #   missing because lm can't cope with them. 
+    #   Now deal with other missing value patterns. The precise
+    #   treatment depends on na.option, but in the first instance
+    #   it's helpful to record the patterns of missingness at
+    #   each time point. Then loop over the patterns needed
+    #   (which, at this stage, are just the "no missing members"
+    #   pattern "" if na.option is either na.impute or na.pass,
+    #   and all the available patterns if it's na.rm); in each
+    #   case construct the design matrix for the ANOVA model
+    #   fitted to the required subset of data, and then calculate
+    #   the intercept directly (avoids use of lm() which produces
+    #   a whole load of other stuff that isn't needed).
     #
-    X <- model.matrix(~., GrpFac)     
-    y <- t(as.matrix(Data[,-1]))
-    Wanted <- apply(y, MARGIN=2, FUN=function(x) !all(is.na(x))) 
-    Intercepts <- coef(lm(y[,Wanted] ~ ., data=as.data.frame(X)))[1,]
-    options(contrasts=OldOpt) # Reset to original values
-    z <- rep(NA, length(Wanted))
-    z[Wanted] <- Intercepts
+    NAs <- apply(y, MARGIN=2, FUN=function(x) {
+      paste(which(is.na(x)), collapse=",") } )
+    PatternsToProcess <- ""
+    if ("na.rm" %in% na.option) PatternsToProcess <- unique(NAs)
+    Intercepts <- rep(NA, ncol(y))
+    for (i in 1:length(PatternsToProcess)) {
+      Times <- (NAs==PatternsToProcess[i]) # Time points with this pattern
+      Members <- # Ensemble members contributing to estimates for this pattern
+        !( (1:nrow(y)) %in% unlist(strsplit(PatternsToProcess[i], ",")) )
+      GrpFac <- apply(as.matrix(Groups)[Members,,drop=FALSE], 
+                      MARGIN=2, FUN=as.factor, simplify=FALSE)
+      names(GrpFac) <- paste("V",1:length(GrpFac),sep="")
+      GrpFac <- list2DF(GrpFac)
+      OldOpt <- options()$contrasts
+      options(contrasts = c("contr.sum", "contr.poly"))
+      X <- model.matrix(~ ., GrpFac) 
+      options(contrasts = OldOpt)
+      XXInv <- solve(crossprod(X))[1,,drop=FALSE] # Just need first row
+      XY <- crossprod(X, y[Members,Times])
+      Intercepts[Times] <- XXInv %*% XY
+    }
+    z[!NoData] <- Intercepts
   }
   z
 }
 ######################################################################
-PlotEnsTS <- function(Data, Colours, EnsStruct=NULL, na.rm=TRUE, EnsTransp=1, 
+PlotEnsTS <- function(Data, Colours, Groups=NULL, na.option=NULL, EnsTransp=1, 
                       Types=c(1,1), Units=expression(degree*"C"), 
                       plot=TRUE, add=FALSE, ...) {
   #
@@ -178,8 +236,8 @@ PlotEnsTS <- function(Data, Colours, EnsStruct=NULL, na.rm=TRUE, EnsTransp=1,
   #  Data   Data frame containing time in column 1, observed series
   #         in column 2 and ensemble members in the remaining
   #         columns. 
-  #  EnsStruct See documentation for EnsMean
-  #  na.rm  Ditto
+  #  Groups See documentation for EnsMean
+  #  na.option  Ditto
   #  Colours Vector containing the colour specifications for 
   #         the observations and ensemble members respectively.
   #         If of length 2 then the two colours will be used
@@ -239,7 +297,7 @@ PlotEnsTS <- function(Data, Colours, EnsStruct=NULL, na.rm=TRUE, EnsTransp=1,
   if (!add) matplot(Data[,1], Data[,-1], 
                     type="n", xlab="Year", ylab=Units, ...)
   if (plot) {
-    MeanLine <- EnsMean(Data[,-1, drop=FALSE], EnsStruct, na.rm)
+    MeanLine <- EnsMean(Data[,-1, drop=FALSE], Groups, na.option)
     matlines(Data[,1], Data[,-(1:2)], col=EnsCols, lty=EnsTypes)
     lines(Data[,1], MeanLine, col=EnsMeanCol, lty=EnsMeanType, lwd=5)
     lines(Data[,1:2], col=ObsCol, lty=ObsType, lwd=5)
