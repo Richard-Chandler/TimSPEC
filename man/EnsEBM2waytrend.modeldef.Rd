@@ -5,7 +5,7 @@
 \description{Sets up the structure of a state space model for an observed time series and two-way structured ensemble, with trend formulation inspired by the form of a simple energy balance model (EBM). The motivating application is for a regional ensemble in which each member has been produced by running one of a collection of regional climate models (RCMs), with boundary conditions generated using one of a collection of global climate models (GCMs): the documentation below is framed in the context of such an application. 
 }
 \usage{
-EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa, Groups, 
+EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6, Groups, 
                          interactions = "none", UseAlpha = TRUE, 
                          UsePhi = TRUE, constrain = TRUE)
 }

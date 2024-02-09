@@ -2485,7 +2485,7 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE,
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
-EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL, kappa, 
+EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL, kappa=1e6, 
                                  NRuns, Groups=NULL, UseAlpha=TRUE, 
                                  UsePhi=TRUE, constrain=TRUE) {
   #
@@ -2740,7 +2740,7 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
 }
 ######################################################################
 EnsEBM2waytrend.modeldef <- 
-  function(theta, Xt, m0=NULL, C0=NULL, kappa, Groups, 
+  function(theta, Xt, m0=NULL, C0=NULL, kappa=1e6, Groups, 
            interactions="none", UseAlpha=TRUE, UsePhi=TRUE, 
            constrain=TRUE) {
     #

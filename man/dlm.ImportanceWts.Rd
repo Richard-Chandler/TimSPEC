@@ -29,5 +29,6 @@ The data matrix \code{Y} is used to calculate the exact log-posterior for each e
 Durbin, J. and Koopman, S. J. (2012). \emph{Time series analysis by state space methods (second
 edition)}, Chapter 13. Oxford University Press, Oxford.
 }
+\seealso{\code{\link{CumulativeWeightPlot}}, \code{\link{PostPredSample}}}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>
 }

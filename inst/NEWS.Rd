@@ -1,5 +1,10 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
+\section{Changes in version 0.0-6 (2024-02-09)}{
+  \itemize{
+    \item{Minor bug fixes and amendments to documentation.}
+  }
+}
 \section{Changes in version 0.0-5 (2024-02-07)}{
   \itemize{
     \item{Amended \code{EnsMean} function to cope with a broader range of missing value patterns, and renamed some of its arguments to reflect this and for consistency with object names elsewhere in the package.}
