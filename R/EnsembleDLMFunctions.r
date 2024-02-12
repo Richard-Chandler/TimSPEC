@@ -674,8 +674,7 @@ dlm.SafeLL <- function(theta, Y, build, prior.pars=NULL,
   #
   # If prior.pars is NULL then the function returns the result 
   # of dlmLL when that routine returns a finite number, otherwise 
-  # it returns the square root of the largest floating-point 
-  # number on the machine. If prior.pars is non-null, the function
+  # it returns BigVal. If prior.pars is non-null, the function
   # returns the negative log posterior (or penalised negative 
   # log-likelihood if you prefer) when dlmLL returns a finite number. 
   # In this case the result also has an "Unpenalised" attribute
@@ -694,9 +693,11 @@ dlm.SafeLL <- function(theta, Y, build, prior.pars=NULL,
                  ArgsNeeded[!(names(ArgsNeeded) %in% names(ArgsGiven))])
   Model <- do.call(build, BuildArgs)
   LL <- tryCatch(dlmLL(y=Y, mod=Model, debug=debug), 
-                 error=function(e) Inf)
+                 error=function(e) { z <- Inf; attr(z, "error") <- e; z})
   if (!is.finite(LL)) {
+    err <- attr(LL, "error")
     LL <- BigVal
+    attr(LL, "error") <- err
   } else if (!is.null(prior.pars)) {
     if (nrow(prior.pars)!=length(theta) | ncol(prior.pars) !=2) 
       stop("prior.pars should be a 2-column matrix with a row per element of theta")
@@ -786,16 +787,31 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
     NotDone <- TRUE
     BatchSize <- 20
     StepMax <- 1
+    InitErr <- FALSE
     while(NotDone) {
       LL.init <- dlm.SafeLL(theta=theta.init, Y=Y, build=build, 
                             prior.pars=prior.pars, debug=debug, ...)
+      #
+      #   Bail out if initial value calculation failed
+      #
+      if (!is.null(attr(LL.init, "error"))) {
+        warning(paste("dlm.SafeLL failed at initial value of theta -", 
+                      "error message was\n ", 
+                      attr(LL.init, "error")$message), immediate.=TRUE)
+        z <- list(par=theta.init, value=Inf, code=-1,
+                  counts=0)
+        if (!is.null(par.names)) names(z$par) <- par.names
+        if (!(Use.dlm | is.null(prior.pars))) z$prior.pars <- prior.pars
+        class(z) <- "dlmMLE"
+        return(z)
+      }
       z <- try(nlm(dlm.SafeLL, p=theta.init, Y=Y, build=build,
                    prior.pars=prior.pars, BigVal=LL.init+1e3, 
                    typsize=pmax(abs(theta.init), 0.1), 
                    fscale=abs(LL.init), stepmax=StepMax, hessian=FALSE, 
                    iterlim=BatchSize, gradtol=1e-4, ...),
                silent=TRUE)
-      if (isTRUE(class(z))=="try-error") { # When nlm throws an Inf
+      if (isTRUE(class(z)=="try-error")) { # When nlm throws an Inf
         BatchSize <- BatchSize / 2
       } else if (z$code %in% 4:5) { # Iteration limit exceeded: move theta.init & try again
         theta.init <- z$estimate
@@ -1064,6 +1080,7 @@ dlm.ThetaSample <- function(Fit, N, Random=TRUE, Quantile=TRUE,
   #   the spectral decomposition of the covariance matrix, working 
   #   with a generalised inverse if necessary. 
   #
+  if (is.null(Fit$hessian)) stop("Fit doesn't contain a hessian component")
   Cov.SpD <- eigen(Fit$hessian, symmetric=TRUE)
   if (any(Cov.SpD$values<0)) {
     stop("Fit$hessian isn't non-negative definite")
