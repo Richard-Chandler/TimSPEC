@@ -18,7 +18,7 @@ The methodology is described in detail in
 The package has been tested under [R (version 4.1.2 and later)](https://www.r-project.org/), under both `Windows` and `Ubuntu` operating systems. 
 It makes use of the `dlm`, `Hmisc`, `magick` and `numDeriv` add-on packages in `R`. 
 
-**Note, however:** there are memory leaks in the `dlm` package as 
+**Note, however:** there are memory leaks in the official version of the `dlm` package as 
 distributed via [CRAN](https://cloud.r-project.org/web/packages/dlm/index.html). The package author has been notified but has not fixed them: 
 a patched version is needed, therefore. See the 'Installation' section below. 
 
@@ -38,7 +38,8 @@ To install the corrected version of the `dlm` library (version 1.1-6 at time of 
 Then:
 
 ```
-install.packages("https://github.com/Richard-Chandler/TimSPEC/raw/main/dlm/dlm_1.1-6.tar.gz", repos=NULL)
+library(devtools)
+install_github("Richard-Chandler/dlmPatched")
 ```
 
 If this succeeds, you are now ready to start. `help(SLLTSmooth)` may be a useful entry point. 
