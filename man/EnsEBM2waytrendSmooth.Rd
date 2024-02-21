@@ -22,7 +22,7 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups,
   \item{UseAlpha}{Logical scalar indicating whether or not to include a scaling factor (\eqn{\alpha}{alpha} in the "Details" section of \code{\link{EnsEBMtrend.modeldef}}) when relating the ensemble consensus trend to that in the real climate system.  If \code{FALSE}, the value of \eqn{\alpha}{alpha} is set to 1.}
   \item{UsePhi}{Controls whether or not to include thermal inertia parameters \eqn{\phi_{0}}{phi[0]} and \eqn{\phi_{1}}{phi[1]} in the model structure. If \code{FALSE}, both parameters are set to zero.}
   \item{constrain}{Logical scalar, controlling whether or not to ensure identifiability by imposing sum-to-zero constraints on relevant RCM-specific and GCM-specific effects.}
-  \item{messages}{Logical scalar controlling whether or not to print progress to screen.}
+  \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
   \item{debug}{As in \code{\link{dlmMLE}}.}
 }
@@ -36,5 +36,5 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups,
 \note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
 
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EnsEBM2waytrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
+\seealso{\code{\link{EnsEBM2waytrend.modeldef}}, \code{\link{EBMtrendSmooth}}, \code{\link{EnsEBMtrendSmooth}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
 
