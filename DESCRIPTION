@@ -1,15 +1,15 @@
 Package: TimSPEC
 Type: Package
 Title: Time Series postprocessing of ensembles for climate
-Version: 0.0-6
-Date: 2024-02-12
+Version: 0.0-7
+Date: 2024-02-21
 Authors@R: person("Richard E.", "Chandler", role=c("aut", "cre"),
              email="r.chandler@ucl.ac.uk")
 Author: Richard E. Chandler [aut, cre]
 Maintainer: Richard E. Chandler <r.chandler@ucl.ac.uk>
 Description: Contains routines for the analysis of ensembles of time series of climate projections from multiple climate models, accounting for complex shared discrepancies between properties of the models and the real climate system. Routines are provided for situations where the climate models can be considered as exchangeable, and also for structured ensembles using coupled pairs of models (such as global and regional model pairs in regional modelling experiments). The methodology is suitable for use with time series containing a single value per year. It is based around Gaussian dynamic linear models, although options are provided for ensuring that postprocessed projections remain non-negative if required. 
 License: file LICENSE
-Depends: R (>= 4.1), dlm (>= 1.1), magick, numDeriv
+Depends: R (>= 4.1), dlm (>= 1.1-600), magick, numDeriv
 Imports: Hmisc
 NeedsCompilation: no
 LazyData: FALSE

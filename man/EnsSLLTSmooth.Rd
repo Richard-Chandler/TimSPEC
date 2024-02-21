@@ -24,7 +24,7 @@ EnsSLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, discrepancy = "varying",
   \item{Tiny}{A small positive value, used to replace negative initial estimates for variances (see \code{\link{SLLT.IniPar}})}
   \item{ObsSmooth}{Optional: result of a previous call to \code{\link{SLLTSmooth}} for the first column of \code{Y}. If present, this is used to help initialise the numerical search for an MLE if a "constant" model needs to be fitted, or if the resulting smooth is needed. Otherwise the relevant model will be fitted as part of this routine.}
   \item{Ens0Theta}{Optional parameter vector for a previous fit of an "ensemble local linear trend" model with a constant discrepancy term. If present, this will be used to help initialise the numerical search for an MLE if a "varying" model needs to be fitted here. Otherwise the relevant constant-discrepancy model will be fitted as part of this routine.}
-  \item{messages}{Logical scalar controlling whether or not to print progress to screen.}
+  \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
   \item{debug}{As in \code{\link{dlmMLE}}.}
 }
@@ -38,7 +38,7 @@ EnsSLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, discrepancy = "varying",
 \note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
 
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
-\seealso{\code{\link{EnsSLLT.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
+\seealso{\code{\link{EnsSLLT.modeldef}}, \code{\link{SLLTSmooth}}, \code{\link{EnsEBMtrendSmooth}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
 
 \examples{
 ## Load package data 

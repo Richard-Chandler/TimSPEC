@@ -17,7 +17,7 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE,
   \item{kappa}{Initialisation variance for diffuse elements of the state vector.}
   \item{UsePhi}{Controls whether or not to use the full model including a thermal inertia parameter.}
   \item{prior.pars}{Optional \code{3*2} matrix. If present, it is taken to contain the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertia).}
-  \item{messages}{Controls whether to print progress to screen.}
+  \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.} 
   \item{debug}{As in \code{\link{dlmMLE}}.}
 }
@@ -32,7 +32,7 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE,
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{\code{\link{EnsEBMtrend.modeldef}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
+\seealso{\code{\link{EBMtrend.modeldef}}, \code{\link{EnsEBMtrendSmooth}}, \code{\link{EnsEBM2waytrendSmooth}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}
 
 \examples{
 ## Load package data 

@@ -1,15 +1,28 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
+
+\section{Changes in version 0.0-7 (2024-02-21)}{
+  \itemize{
+    \item{Corrected definition of \code{Consensus} elements of ensemble mimic definitions (functions \code{EnsSLLT.modeldef}, \code{EnsEBMtrend.modeldef} and \code{EnsEBM2waytrend.modeldef})}
+    \item{Minor change to initialisation of parameters in estimation of mimics for ensembles.}
+    \item{Amended definition of \code{messages} argument to \code{dlm.SafeMLE} and other functions, to allow access to \code{print.level} control in \code{nlm} when fitting models. This can be helpful for diagnosing problems in estimation.}
+    \item{Added details of mimic definitions and state vectors to all of the \code{.modeldef} documentation files.}
+    \item{Updated \code{seealso} sections in documentation to improve navigation.}
+  }
+}
+
 \section{Changes in version 0.0-6 (2024-02-09)}{
   \itemize{
     \item{Minor bug fixes and amendments to documentation.}
   }
 }
+
 \section{Changes in version 0.0-5 (2024-02-07)}{
   \itemize{
     \item{Amended \code{EnsMean} function to cope with a broader range of missing value patterns, and renamed some of its arguments to reflect this and for consistency with object names elsewhere in the package.}
   }
 }
+
 \section{Changes in version 0.0-4 (2024-01-29)}{
   \itemize{
   \item{Added \code{EnsMean} routine with \code{EnsStruct} and \code{na.rm} options; amended \code{PlotEnsTS} and other routines to use this, thus allowing more flexible calculation of ensemble means.}
