@@ -33,7 +33,7 @@ library(devtools)
 install_github("Richard-Chandler/TimSPEC")
 ```
 
-To install the corrected version of the `dlm` library (version 1.1-6 at time of writing), `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant [compilation tools](https://mac.r-project.org/tools/) are available, depending on their setup.
+To install the corrected version of the `dlm` library (version 1.1-6 on CRAN at time of writing, renumbered here to start at version 1.1-600), `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant [compilation tools](https://mac.r-project.org/tools/) are available, depending on their setup.
 
 Then:
 
