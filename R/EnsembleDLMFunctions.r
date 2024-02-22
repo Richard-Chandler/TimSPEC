@@ -434,7 +434,11 @@ SmoothPlot <-
           simplify2array(dlmSvd2var(Smooth$Smooth$U.S,
                                     Smooth$Smooth$D.S)[-1]) # Covariance matrices
         MuCons.Var <- apply(X=state.vars, MARGIN=3, FUN=covxfrm, A=A)
-        MuCons <- exp(MuCons + MuCons.Var/2) 
+        #
+        #   Next line should be a roughly unbiased estimator of the
+        #   true consensus on the original scale
+        #
+        MuCons <- exp(MuCons - MuCons.Var/2) 
       }
     }
   } else { # Or use posterior samples
