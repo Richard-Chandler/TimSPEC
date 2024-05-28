@@ -310,7 +310,7 @@ SmoothPlot <-
            PlotMu0=TRUE, PlotConsensus=FALSE, Weights=NULL, DatColours, 
            DatTypes=c(1,1), PredColours, alpha=c(0.6,0.1), 
            SmoothPIs=FALSE, Units=expression(degree*"C"), 
-           plot.title="", ...) {
+           plot.title="", Legend=TRUE, ...) {
   #
   #   To plot the smoothing results from a dlm, together with
   #   the data used to produce them. Arguments:
@@ -377,6 +377,8 @@ SmoothPlot <-
   #           is appropriate for plots of temperature in 
   #           degrees Celsius.
   #   plot.title  Self-explanatory, hopefully. 
+  #   Legend  Logical controlling whether or not a legend is
+  #           added to the plot
   #   ...     Other arguments to PlotEnsTS(). 
   #
   #   The function returns, invisibly, a data frame containing 
@@ -505,20 +507,25 @@ SmoothPlot <-
   #
   #   Set up legend depending on what's being plotted
   #
-  leg.cols <- c(DatColours[c(1,2,2)], PredColours[c(1,2)], NA)
-  leg.lwd <- c(5,5,1,5,5,NA)
-  leg.fill <- c(rep(NA,5), CI.cols[1])
-  leg.text <- c("Observations", "Ensemble mean", "Ensemble members", 
-                expression(hat(mu)[0](t)),
-                "Ensemble consensus",
-                expression("95% interval for "*Y[0](t)))
-  Wanted <- rep(TRUE, length(leg.cols))
-  if (!PlotConsensus) Wanted[5] <- FALSE
-  if (!PlotMu0) Wanted[4] <- FALSE
-  if (ncol(PlotData)<3) Wanted[c(2,3,5)] <- FALSE
-  legend("topleft", col=leg.cols[Wanted], lwd=leg.lwd[Wanted], 
-         fill=leg.fill[Wanted], border=NA, ncol=2, bg="white",
-         legend=leg.text[Wanted])
+  if (Legend) {
+    leg.cols <- c(DatColours[c(1,2,2)], PredColours[c(1,2)], NA)
+    leg.lwd <- c(5,5,1,5,5,NA)
+    leg.fill <- c(rep(NA,5), CI.cols[1])
+    leg.text <- c("Observations", "Ensemble mean", "Ensemble members", 
+                  expression(hat(mu)[0](t)),
+                  "Ensemble consensus",
+                  expression("95% interval for "*Y[0](t)))
+    Wanted <- rep(TRUE, length(leg.cols))
+    if (!PlotConsensus) Wanted[5] <- FALSE
+    if (!PlotMu0) Wanted[4] <- FALSE
+    if (ncol(PlotData)<3) Wanted[c(2,3,5)] <- FALSE
+    legend("topleft", col=leg.cols[Wanted], lwd=leg.lwd[Wanted], 
+           fill=leg.fill[Wanted], border=NA, ncol=2, bg="white",
+           legend=leg.text[Wanted])
+  }
+  #
+  #   Assemble return value
+  #
   z <- data.frame(Time=Data[,1], Mu0=Mu0.hat, LL95=CI.Lims[1,],
                   UL95=CI.Lims[2,])
   if (PlotConsensus) z$Consensus <- MuCons
@@ -1510,8 +1517,13 @@ ExamineFailures <- function(Thetas, FailedIDs, alpha=0.2) {
   N <- nrow(Thetas); Nf <- length(FailedIDs) 
   plot.chars <- c(rep(1,N-Nf), rep(16, Nf))
   plot.cols <- c(rep(grey(0.8, alpha=0.2), N-Nf), rep("red", Nf))
-  pairs(rbind(Thetas[FailedIDs,], Thetas[-FailedIDs,]),
-        col=plot.cols, pch=plot.chars)
+  if (Nf > 0) {
+    pairs(rbind(Thetas[FailedIDs,], Thetas[-FailedIDs,]),
+          col=plot.cols, pch=plot.chars)
+  } else {
+    pairs(Thetas, col=plot.cols[1], pch=plot.chars[1])
+    warning("Good news - there are no failures to plot!")
+  }
 }
 ######################################################################
 SampleObs <- function(Thetas, States, build, Y, WhichEls=1:ncol(Y), 
@@ -1693,11 +1705,12 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   z$States <-
     SampleStates(z$Theta, build=Build, Y=Data, debug=debug, 
                  messages=messages, NonNeg=if (NonNeg) WhichEls else NULL, ...)
+  Replaced <- 0
+  if (PlotFails) ExamineFailures(z$Thetas, FailedIDs)
   FailedIDs <- attr(z$States, "FailedIDs")
   if (!is.null(FailedIDs)) {
-    if (PlotFails) ExamineFailures(z$Thetas, FailedIDs)
     if (ReplaceOnFail) {
-      z$Replacements <- TRUE
+      z$Replaced <- length(FailedIDs)
       while (!is.null(FailedIDs)) {
         NFails <- length(FailedIDs)
         NewThetas <-     
