@@ -19,8 +19,7 @@ EBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE)
 \deqn{Y(t) = \mu(t) + \varepsilon(t)}{Y(t) = mu[t] + e[t]}
 with \eqn{E[\varepsilon(t)]=0}{E[e(t)]=0} and \eqn{Var[\varepsilon(t)]=\sigma^{2}}{Var[e(t)]=sigma^2}, and where the trend \eqn{\mu(t)}{mu(t)} follows the EBM-inspired dynamics
 \deqn{\mu(t) = \phi\mu(t-1) + \gamma f(t) + \beta(t-1)\ .}{mu(t) = phi*mu(t-1) + gamma*f(t) + beta(t-1)\ .}
-Here, \eqn{f(t)} represents the "forcing" at time \eqn{t} and \eqn{(\beta(\cdot))}
-{(beta(.))} is a random walk "drift" with innovation variance \eqn{\tau^{2}}{tau^2} representing the error arising from the use of the EBM approximation to represent the trend. 
+Here, \eqn{f(t)} represents the "forcing" at time \eqn{t} and \eqn{(\beta(\cdot))}{(beta(.))} is a random walk "drift" with innovation variance \eqn{\tau^{2}}{tau^2} representing the error arising from the use of the EBM approximation to represent the trend. 
 
 If \code{UsePhi} is \code{FALSE}, the value of \eqn{\phi}{phi} in the model definition is set to zero.
 
@@ -29,6 +28,7 @@ At time \eqn{t}, the state vector for the model is defined as
 \deqn{\mathbf{S}(t) = \left(\mu(t)\ \beta(t)\ \gamma\right)'.}{S[t] = (mu[t] beta[t] gamma)'.}
 
 }
+
 \value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.
 }
 \references{
