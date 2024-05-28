@@ -12,7 +12,9 @@ ExamineFailures(Thetas, FailedIDs, alpha = 0.2)
   \item{FailedIDs}{A vector containing the row numbers of \code{ThetaSamples} for which \code{\link{SampleStates}} failed. }
   \item{alpha}{Transparency to use for plotting non-failed samples. Values close to 1 are opaque, those close to 0 are more transparent and create the impression of a hazy background data cloud }
 }
-\details{The function produces a pairs plot of sampled parameter vectors, with the majority of the data points plotted as a background "data cloud" in grey; and with the points for failed samples plotted in the foreground in red. This is primarily intended for diagnostic purposes, hence few user-customisable options.}
+\details{The function produces a pairs plot of sampled parameter vectors, with the majority of the data points plotted as a background "data cloud" in grey; and with the points for failed samples plotted in the foreground in red. This is primarily intended for diagnostic purposes, hence few user-customisable options.
+
+If there are no failed samples, the function still produces a plot and issues a warning message.}
 \value{The function produces a plot on the current graphics device.}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{SampleStates}}}
