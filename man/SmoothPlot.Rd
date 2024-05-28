@@ -8,7 +8,8 @@ SmoothPlot(Data, Smooth = NULL, Samples = NULL, AntiLog = FALSE,
            NonNeg = FALSE, PlotMu0 = TRUE, PlotConsensus = FALSE, 
            Weights = NULL, DatColours, DatTypes = c(1, 1), PredColours, 
            alpha = c(0.6, 0.1), SmoothPIs = FALSE, 
-           Units = expression(degree * "C"), plot.title = "", ...)
+           Units = expression(degree * "C"), plot.title = "", 
+		   Legend=TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -27,6 +28,7 @@ SmoothPlot(Data, Smooth = NULL, Samples = NULL, AntiLog = FALSE,
   \item{SmoothPIs}{If \code{TRUE} and if \code{Samples} is provided, the prediction intervals on the plot will be smoothed using \code{\link{loess}}. Otherwise (the default) the raw quantiles from the sampled serieswill be plotted. }
   \item{Units}{Length-1 character vector, used to label the vertical axis of the plot. Default value is appropriate for plots of temperature in degrees Celsius. }
   \item{plot.title}{Self-explanatory, hopefully. }
+  \item{Legend}{Logical scalar controlling whether or not to add a legend to the plot. Default is to add it.}
   \item{\dots}{Other arguments to \code{\link{PlotEnsTS}}. }
 }
 \value{The function produces a plot on the current graphics device. It also returns, invisibly, a data frame containing the values of the estimated "real" and "ensemble consensus" trends, together with the upper and lower 95\% limits for the real trend. The interpretation of the limits depends on the inputs: for a \code{Smooth} object, they're pointwise confidence bands while for a \code{Samples} object they are pointwise posterior predictive intervals. }
