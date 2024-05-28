@@ -32,7 +32,6 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
   \item{messages}{Logical scalar, controlling whether to print progress to screen.}
   \item{\dots}{Additional arguments to \code{build}. }
 }
-\details{The function is essentially a wrapper to \code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}} and \code{\link{SampleObs}}. }
 
 \value{The function returns a list containing the following elements:
 
@@ -40,9 +39,11 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
 \item{States}{The result of the call to \code{\link{SampleStates}};} 
 \item{Obs}{The result of the call to \code{\link{SampleObs}};} 
 \item{Model}{The \code{dlm} object used to generate the samples;}
-\item{Weights}{Information on importance weights for each sample, if \code{Importance} is \code{TRUE}; otherwise \code{NULL}. If non-\code{NULL}, this is the result of calling \code{\link{dlm.ImportanceWts}};}  
-\item{Replaced}{Integer containing the number of initial samples that have been replaced --- see \code{ReplaceOnFail} argument above. This will be zero if \code{ReplaceOnFail} is \code{FALSE}.} 
+\item{Weights}{Information on importance weights for each sample, if \code{Importance} is \code{TRUE}; otherwise \code{NULL}. If non-\code{NULL}, this is the result of calling \code{\link{dlm.ImportanceWts}}.} 
 }
+
+\details{The function is essentially a wrapper to \code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}} and \code{\link{SampleObs}}, with the exception that if \code{ReplaceOnFail} is \code{TRUE} then the \code{FailedIDs} attribute of the \code{States} component of the result corresponds to the samples that have been replaced after failing initially.}
+
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 
 \seealso{\code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}}, \code{\link{SampleObs}}, \code{\link{SLLTSmooth}} (for details of example below)}

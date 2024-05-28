@@ -18,7 +18,8 @@ SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE,
   \item{\dots}{Additional arguments to \code{build}. }
 }
 \details{Most users won't need to call this function: use \code{\link{PostPredSample}} instead, which is a wrapper to all of the function calls needed to produce a posterior predictive sample. }
-\value{The function returns an array of dimension \code{c(N, T, p)} where \code{N} is the number of samples, \code{T} the number of time points in \code{Y}, and \code{p} the dimension of the state vector. Samples for which the Kalman Filter failed are left as \code{NA}, with a warning, as are samples containing negativevalues in the columns selected by \code{NonNeg} if this is non-\code{NULL}. 
+
+\value{The function returns an array of dimension \code{c(N, T, p)} where \code{N} is the number of samples, \code{T} the number of time points in \code{Y}, and \code{p} the dimension of the state vector. Samples for which the Kalman Filter failed are left as \code{NA}, with a warning, as are samples containing negative values in the columns selected by \code{NonNeg} if this is non-\code{NULL}. In this case, the result also has a \code{FailedIDs} attribute which is a numeric vector containing the indices of the failed samples. 
 
 \strong{NOTE} that the routine removes the initial "time zero" values inserted by the \pkg{dlm} package. }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
