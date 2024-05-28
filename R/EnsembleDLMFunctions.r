@@ -1705,12 +1705,12 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   z$States <-
     SampleStates(z$Theta, build=Build, Y=Data, debug=debug, 
                  messages=messages, NonNeg=if (NonNeg) WhichEls else NULL, ...)
-  z$States$Replaced <- 0
+  attr(z$States, "Replaced") <- 0
   FailedIDs <- attr(z$States, "FailedIDs")
   if (PlotFails) ExamineFailures(z$Thetas, FailedIDs)
   if (!is.null(FailedIDs)) {
     if (ReplaceOnFail) {
-      z$States$Replaced <- length(FailedIDs)
+      attr(z$States, "Replaced") <- length(FailedIDs)
       while (!is.null(FailedIDs)) {
         NFails <- length(FailedIDs)
         NewThetas <-     
