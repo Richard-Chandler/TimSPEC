@@ -12,7 +12,7 @@ EnsMean(Data, Groups=NULL, na.option=NULL)
 \arguments{
   \item{Data}{Data frame containing an observed series in column 1 and ensemble members in the remaining columns. \strong{NB} column 1 is ignored: the structure of this argument is consistent with that of the \code{Data} argument for other routines in the \pkg{TimSPEC} package.
 }
-  \item{Groups}{A vector or matrix specifying any structure in the         ensemble, with an element (resp. row, in the matrix case) for each ensemble member and containing the codes of any grouping variables defining the structure. This corresponds to the \code{Groups} argument in, for example, \code{\link{EnsEBMtrendSmooth}} or \code{\link{EnsEBM2waytrendSmooth}}.
+  \item{Groups}{A vector or matrix specifying any structure in the ensemble, with an element (resp. row, in the matrix case) for each ensemble member and containing the codes of any grouping variables defining the structure. This corresponds to the \code{Groups} argument in, for example, \code{\link{EnsEBMtrendSmooth}} or \code{\link{EnsEBM2waytrendSmooth}}.
 }
   \item{na.option}{Controls the treatment of missing ensemble members. Valid non-\code{NULL} values are \code{"na.rm"} (remove \code{NA} cases prior to the calculations), \code{"na.impute"} (see below) or \code{"na.pass"} (propagate the \code{NA}s through the calculations). The default \code{NULL} value corresponds to \code{"na.rm"} if \code{Groups} is \code{NULL}, and \code{"na.impute"} otherwise. 
 }

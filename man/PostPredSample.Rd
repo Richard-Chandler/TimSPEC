@@ -14,8 +14,8 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{Data}{The data: a matrix in which the first column contains an observed time series and the remainder contain ensemble members. }
-  \item{ModelBundle}{A list containing at least the named components \code{Model} (an object of class \code{dlm}) and \code{Smooth} (the result of Kalman Smoothing a dataset using the DLM stored in \code{Model}, via the \code{\link{dlmSmooth}} command). \strong{NB} it's assumed that the model is set up in such a way that the "real-world" time series is the first element of each observation vector. The \code{*Smooth} routines in the \pkg{PECTSP} package produce objects with the required structure. }
-  \item{Build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{PECTSP} package. }
+  \item{ModelBundle}{A list containing at least the named components \code{Model} (an object of class \code{dlm}) and \code{Smooth} (the result of Kalman Smoothing a dataset using the DLM stored in \code{Model}, via the \code{\link{dlmSmooth}} command). \strong{NB} it's assumed that the model is set up in such a way that the "real-world" time series is the first element of each observation vector. The \code{*Smooth} routines in the \pkg{TimSPEC} package produce objects with the required structure. }
+  \item{Build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package. }
   \item{N}{Number of posterior samples to draw. Ignored if \code{Random} is \code{FALSE} (see below). }
   \item{Random}{If \code{TRUE} (the default) then samples are drawn randomly from the (approximate) posterior. If \code{FALSE}, a systematic sample is taken. See \code{\link{dlm.ThetaSample}} for more details. }
   \item{Quantile}{Used only if \code{Random} is \code{FALSE}. See \code{\link{dlm.ThetaSample}}. }
