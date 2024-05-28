@@ -33,13 +33,15 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
   \item{\dots}{Additional arguments to \code{build}. }
 }
 \details{The function is essentially a wrapper to \code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}} and \code{\link{SampleObs}}. }
+
 \value{The function returns a list containing the following elements:
 
 \item{Thetas}{The result of the call to \code{\link{dlm.ThetaSample}};}
 \item{States}{The result of the call to \code{\link{SampleStates}};} 
 \item{Obs}{The result of the call to \code{\link{SampleObs}};} 
 \item{Model}{The \code{dlm} object used to generate the samples;}
-\item{Weights}{Information on importance weights for each sample, if \code{Importance} is \code{TRUE}; otherwise \code{NULL}. If non-\code{NULL}, this is the result of calling \code{\link{dlm.ImportanceWts}};}  \item{Replacements}{A logical scalar indicating whether some of the initial samples were replaced --- see \code{ReplaceOnFail} argument above.} 
+\item{Weights}{Information on importance weights for each sample, if \code{Importance} is \code{TRUE}; otherwise \code{NULL}. If non-\code{NULL}, this is the result of calling \code{\link{dlm.ImportanceWts}};}  
+\item{Replaced}{Integer containing the number of initial samples that have been replaced --- see \code{ReplaceOnFail} argument above. This will be zero if \code{ReplaceOnFail} is \code{FALSE}.} 
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 
