@@ -5,7 +5,7 @@
   \itemize{
     \item{Replaced out-of-date package acronyms in documentation with \code{TimSPEC} throughout.}
     \item{Added \code{Legend} argument to \code{SmoothPlot}, allowing users to suppress the default addition of legends to plots.}
-    \item{Changed the structure of the object returned by \code{PostPredSample}, replacing the logical \code{Replacements} component (indicating whether or not any failed samples were replaced) with a numeric \code{Replaced} component (indicating how many were replaced).}
+    \item{Minor change to the output of \code{PostPredSample}, allowing the user to identify the entries of the \code{States} component that were replaced if \code{ReplaceOnFail} is \code{TRUE}.}
     \item{Amended the \code{ExamineFailures} function so that it still
     produces a plot (with a warning message) even if there are no
     failures.}
