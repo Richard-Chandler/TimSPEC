@@ -1337,8 +1337,8 @@ CumulativeWeightPlot <-
        col="darkblue", do.points=FALSE, verticals=TRUE,
        xlab="Cumulative % of samples", 
        ylab="Cumulative % of total weight", main=main, ...)
-  abline(h=seq(20,80,20), col=grey(0.8), lty=2)
-  abline(v=seq(20,80,20), col=grey(0.8), lty=2)
+  abline(h=seq(0,100,20), col=grey(0.8), lty=2)
+  abline(v=seq(0,100,20), col=grey(0.8), lty=2)
   invisible(z)
 }
 ######################################################################
