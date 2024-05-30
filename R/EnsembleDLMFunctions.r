@@ -1331,14 +1331,20 @@ CumulativeWeightPlot <-
   #   ...   Other arguments to plot.stepfun(). 
   #
   NWts <- length(w)
-  z <- plot(stepfun(100*(1:NWts)/NWts, 
-               cumsum(100*c(0,sort(w, decreasing=TRUE)))),
-       xval=100*(0:NWts)/NWts, xlim=c(0,100), lwd=2, 
-       col="darkblue", do.points=FALSE, verticals=TRUE,
+#  z <- plot(stepfun(100*(1:NWts)/NWts, 
+#               cumsum(100*c(0,sort(w, decreasing=TRUE)))),
+#       xval=100*(0:NWts)/NWts, xlim=c(0,100), lwd=2, 
+#       col="darkblue", do.points=FALSE, verticals=TRUE,
+#       xlab="Cumulative % of samples", 
+#       ylab="Cumulative % of total weight", main=main, ...)
+  z <- stepfun(100*(1:NWts)/NWts, cumsum(100*c(0,sort(w, decreasing=TRUE))))
+  plot(c(0,100), c(0,100), type="n", xlim=c(0,100), ylim=c(0,100),
        xlab="Cumulative % of samples", 
        ylab="Cumulative % of total weight", main=main, ...)
   abline(h=seq(0,100,20), col=grey(0.8), lty=2)
   abline(v=seq(0,100,20), col=grey(0.8), lty=2)
+  lines(z, xval=100*(0:NWts)/NWts, col="darkblue", 
+  do.points=FALSE, verticals=TRUE, lwd=2)
   invisible(z)
 }
 ######################################################################
