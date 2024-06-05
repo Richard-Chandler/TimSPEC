@@ -310,7 +310,7 @@ SmoothPlot <-
            PlotMu0=TRUE, PlotConsensus=FALSE, Weights=NULL, DatColours, 
            DatTypes=c(1,1), PredColours, alpha=c(0.6,0.1), 
            SmoothPIs=FALSE, Units=expression(degree*"C"), 
-           plot.title="", Legend=TRUE, ...) {
+           plot.title="", Legend=TRUE, LegPos="topleft", ...) {
   #
   #   To plot the smoothing results from a dlm, together with
   #   the data used to produce them. Arguments:
@@ -379,6 +379,8 @@ SmoothPlot <-
   #   plot.title  Self-explanatory, hopefully. 
   #   Legend  Logical controlling whether or not a legend is
   #           added to the plot
+  #	  LegPos  Keyword controlling position of the legend - see
+  #           help for legend
   #   ...     Other arguments to PlotEnsTS(). 
   #
   #   The function returns, invisibly, a data frame containing 
@@ -519,7 +521,7 @@ SmoothPlot <-
     if (!PlotConsensus) Wanted[5] <- FALSE
     if (!PlotMu0) Wanted[4] <- FALSE
     if (ncol(PlotData)<3) Wanted[c(2,3,5)] <- FALSE
-    legend("topleft", col=leg.cols[Wanted], lwd=leg.lwd[Wanted], 
+    legend(LegPos, col=leg.cols[Wanted], lwd=leg.lwd[Wanted], 
            fill=leg.fill[Wanted], border=NA, ncol=2, bg="white",
            legend=leg.text[Wanted])
   }
