@@ -847,7 +847,7 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
   if (z$convergence == 0) {
     if (num.msg>0) cat("numerical optimiser reports successful convergence\n")
   } else {
-    warning("numerical optimiser reports convergence problem")
+    warning("numerical optimiser reports possible convergence problem")
   }
   if (!is.null(par.names)) {
     names(z$par) <- par.names
