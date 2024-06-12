@@ -2227,6 +2227,7 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
     }
     init$C0 <- C0
   }
+  nS <- ncol(FF) # dimension of state vector after eliminating unwanted rows
   Consensus <- rep(0,nS); Consensus[c(1,3)] <- c(alpha,1) # Coefficients yielding ensemble consensus
   #
   #   Ideally, would return a dlm object. However, the dlm() routine
@@ -2687,6 +2688,7 @@ EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL, kappa=1e6,
     }
     init$C0 <- C0
   }
+  nS <- ncol(FF) # dimension of state vector after eliminating unwanted rows
   Consensus <- rep(0, nS); Consensus[c(1,4)] <- c(alpha,1) # Coefficients to extract ensemble consensus
   list(m0=init$m0,C0=init$C0, FF=FF, V=V, GG=GG, W=W, 
        JGG=JGG,X=as.matrix(Xt), Consensus=Consensus)
@@ -3047,6 +3049,7 @@ EnsEBM2waytrend.modeldef <-
       }
       init$C0 <- C0
     }
+    nS <- ncol(FF) # dimension of state vector after eliminating unwanted rows
     Consensus <- rep(0, nS); Consensus[c(1,4)] <- c(alpha,1) # Coefficients to extract ensemble consensus
     list(FF=FF, GG=GG, V=V, W=W, JGG=JGG, X=as.matrix(Xt), 
          m0=init$m0, C0=init$C0, Consensus=Consensus)
