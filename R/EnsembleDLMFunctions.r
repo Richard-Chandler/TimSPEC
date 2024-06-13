@@ -784,6 +784,10 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
   #
   # Find the log-likelihood for the initial value:
   #
+  if (as.numeric(messages)>=1) {
+    cat("Initial value for theta:\n")
+    print(signif(theta.init, 5))
+  }
   if (Use.dlm) {
     if (!is.null(prior.pars)) warning("prior.pars is ignored when Use.dlm is TRUE")
     LL.init <- dlm.SafeLL(theta=theta.init, Y=Y, build=build, debug=debug, ...)
