@@ -1,6 +1,13 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
+\section{Changes in version 0.0-9 (2024-06-13)}{
+  \itemize{
+    \item{Minor bug fixes in \code{SmoothPlot}, relating to plotting of confidence intervals when \code{NonNeg} is \code{TRUE} and some intervals go negative.}
+    \item{Corrected code for calculation of ensemble consensus in \code{Ens*modeldef} functions - length of \code{Consensus} component of result wasn't always correct.}
+  }
+}
+
 \section{Changes in version 0.0-8 (2024-05-28)}{
   \itemize{
     \item{Replaced out-of-date package acronyms in documentation with \code{TimSPEC} throughout.}
