@@ -418,6 +418,7 @@ SmoothPlot <-
       CI.Lims[2,OK] <- qgamma(0.975, shape=Shape[OK], rate=Rate[OK])
       if (!all(OK)) {
         warning("NonNeg is TRUE but not all means are strictly positive")
+        CI.Lims[,!OK] <- 0 # To avoid problems in subsequent plotting with polygon
       }
     } else {
       CI.Lims <- rbind(Mu0.hat - (1.96 * Preds$SE[,1]),
