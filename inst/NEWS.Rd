@@ -3,8 +3,10 @@
 
 \section{Changes in version 0.0-9 (2024-06-13)}{
   \itemize{
+    \item{Added \code{theta} argument to the \code{*Smooth} wrapper functions, allowing users to supply initial values for the optimisation routine in the first step.}
     \item{Minor bug fixes in \code{SmoothPlot}, relating to plotting of confidence intervals when \code{NonNeg} is \code{TRUE} and some intervals go negative.}
     \item{Corrected code for calculation of ensemble consensus in \code{Ens*modeldef} functions - length of \code{Consensus} component of result wasn't always correct.}
+	\item{Improved documentation of some functions, correcting typos and clarifying mathematical notation.}
   }
 }
 
