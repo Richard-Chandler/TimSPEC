@@ -5,7 +5,7 @@
 \description{Fits and applies a "smooth local linear trend" (SLLT) model to a univariate time series.}
 \usage{
 SLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, prior.pars = NULL, 
-           messages = TRUE, Use.dlm = FALSE, debug = FALSE, ...)
+           theta=NULL, messages = TRUE, Use.dlm = FALSE, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -14,6 +14,7 @@ SLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, prior.pars = NULL,
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Variance used to initialise diffuse elements of the state vector.}
   \item{prior.pars}{Optional \code{2*2} matrix containing means and standarddeviations of Gaussian prior distributions for the log variance parameters: in this case, maximum \emph{a posteriori} (MAP) estimation is done.}
+  \item{theta}{Optional initial value for parameter vector. If \code{NULL}, the routine will auto-initialise the optimisation in the first step.}
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
   \item{debug}{As in \code{\link{dlmMLE}}.}

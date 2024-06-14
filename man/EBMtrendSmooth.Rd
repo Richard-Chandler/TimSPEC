@@ -5,8 +5,8 @@
 \description{Fits a model of the form defined by \code{\link{EBMtrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trend with prediction intervals.}
 \usage{
 EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE, 
-               prior.pars = NULL, messages = TRUE, Use.dlm = FALSE, 
-               debug = FALSE)
+               prior.pars = NULL, theta=NULL, messages = TRUE, 
+               Use.dlm = FALSE, debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,6 +17,7 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE,
   \item{kappa}{Initialisation variance for diffuse elements of the state vector.}
   \item{UsePhi}{Controls whether or not to use the full model including a thermal inertia parameter.}
   \item{prior.pars}{Optional \code{3*2} matrix. If present, it is taken to contain the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertia).}
+  \item{theta}{Optional initial value for parameter vector. If \code{NULL}, the routine will auto-initialise the optimisation in the first step.}
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.} 
   \item{debug}{As in \code{\link{dlmMLE}}.}
