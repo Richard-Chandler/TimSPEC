@@ -1625,10 +1625,10 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
                            Random=TRUE, Quantile=TRUE, 
                            Level=ifelse(Quantile, 1.96, 0.99),
                            df=NULL, Antithetic=c("Mean", "Scale"),
-                           Importance=FALSE, ReplaceOnFail=Random,
-                           PlotFails=TRUE, WhichEls=1, NonNeg=FALSE,
-                           ReplaceAll=FALSE, debug=FALSE,
-                           messages=FALSE, ...) {
+                           Importance=FALSE, CheckMax=FALSE, 
+						   ReplaceOnFail=Random, PlotFails=FALSE, 
+						   WhichEls=1, NonNeg=FALSE, ReplaceAll=FALSE, 
+						   debug=FALSE, messages=FALSE, ...) {
   #
   #   To draw samples from the posterior predictive 
   #   distribution of observable time series (observations
@@ -1638,12 +1638,11 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   #                 column contains an observed time series
   #                 and the remainder contain ensemble members.  
   #   ModelBundle   A list containing at least the named components
-  #                 "Model" (an object of class dlm) and "Smooth"
-  #                 (the result of Kalman Smoothing a dataset using 
-  #                 the dlm stored in Model, via the dlmSmooth 
-  #                 command). NB it's assumed that the model is
-  #                 set up in such a way that the "observed" 
-  #                 time series is the first element of each
+  #                 "Model" (an object of class dlm) and "Theta"
+  #                 (a list containing a maximimum likelihood or 
+  #                 MAP fit of a state space model). NB it's assumed
+  #                 that the model is set up in such a way that the 
+  #                 "observed"  time series is the first element of each
   #                 observation vector. The *Smooth() routines
   #                 in this script produce objects with the 
   #                 the required structure. 
@@ -1668,6 +1667,10 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   #                 See dlm.ThetaSample() for full details. 
   #   Importance    Logical scalar, indicating whether or not
   #                 to use importance sampling. 
+  #   CheckMax		If TRUE and if Importance is TRUE, the routine
+  #                 will check that none of the sampled parameter 
+  #					values has a higher (penalised) log-likelihood
+  #                 than ModelBundel$Theta
   #   ReplaceOnFail Logical scalar, used to control the behaviour
   #                 of the routine if the posterior sampling of 
   #                 states fails for some parameter sets. If TRUE,
@@ -1711,13 +1714,32 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   if (ReplaceOnFail & !Random) {
     stop("ReplaceOnFail can't be TRUE unless Random is also TRUE")
   }
+  if (CheckMax & !Importance) {
+    warning("CheckMax is ignored if Importance is FALSE")
+  }
   z <- list(Thetas=NULL, Samples=NULL, Obs=NULL, Weights=NULL,
             Replacements=FALSE)
-  if (as.numeric(messages)>0) cat("\nSampling parameter sets ...\n")
+  if (as.numeric(messages)>0) cat("Sampling parameter sets ...\n")
   z$Thetas <- 
     dlm.ThetaSample(ModelBundle$Theta, N=N, Random=Random,
                     Quantile=Quantile, Level=Level, df=df,
                     Antithetic=Antithetic)
+  if (Importance) {
+    if (as.numeric(messages)>0) cat("Calculating importance weights ...\n")
+    z$Weights <- 
+      dlm.ImportanceWts(z$Thetas, build=Build, Y=Data, 
+                        prior.pars=ModelBundle$Theta$prior.pars,
+                        debug=debug, ...)
+	if (CheckMax & any(z$Weights$log.h>0)) {
+	  warning(paste("See warning from dlm.ImportanceWts: quitting",
+                    "PostPredSample without\n  generating 'States' or 'Obs'",
+				    "components of result. 'Thetas' component has",
+				    "\n  'BestID' attribute giving number of row",
+				    "with highest log-posterior."))
+	  attr(z$Thetas, "BestID") <- which.max(z$Weights$log.h)			
+	  return(z)
+	}
+  }
   if (as.numeric(messages)>0) cat("Sampling state vectors ...\n")
   z$States <-
     SampleStates(z$Theta, build=Build, Y=Data, debug=debug, 
@@ -1733,6 +1755,21 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
                           Quantile=Quantile, Level=Level, df=df,
                           Antithetic=Antithetic)
         z$Thetas[FailedIDs,] <- NewThetas
+        if (Importance) {
+          z$Weights[FailedIDs,] <- 
+             dlm.ImportanceWts(z$Thetas[FailedIDs,], build=Build, Y=Data, 
+                               prior.pars=ModelBundle$Theta$prior.pars,
+                               debug=debug, ...)
+	      if (CheckMax & any(z$Weights$log.h>0)) {
+	        warning(paste("See warning from dlm.ImportanceWts: quitting",
+                          "PostPredSample without\n   generating 'Obs'",
+						  "component of result. 'Thetas' component has",
+						  "\n  'BestID' attribute giving number of row",
+						  "with highest log-posterior."))
+	        attr(z$Thetas, "BestID") <- which.max(z$Weights$log.h)			
+        	return(z)
+          }
+        }
         NewStates <- 
           SampleStates(NewThetas, build=Build, Y=Data, debug=debug,
                        messages=messages, NonNeg=if (NonNeg) 1 else NULL, 
@@ -1751,11 +1788,6 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
                      WhichEls=WhichEls, ReplaceAll=ReplaceAll,
                      NonNeg=NonNeg, ...)
   if (Importance) {
-    if (as.numeric(messages)>0) cat("Calculating importance weights ...\n")
-    z$Weights <- 
-      dlm.ImportanceWts(z$Thetas, build=Build, Y=Data, 
-                        prior.pars=ModelBundle$Theta$prior.pars,
-                        debug=debug, ...)
     SortedWts <- sort(z$Weights$w, decreasing=TRUE)
     NWts <- length(z$Weights$w)
     if (sum(SortedWts[1:ceiling(NWts/10)]) > 0.8*sum(SortedWts)) {
