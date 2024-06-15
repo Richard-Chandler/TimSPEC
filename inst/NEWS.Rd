@@ -1,6 +1,16 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
+\section{Changes in version 0.0-9 (2024-06-13)}{
+  \itemize{
+  \item{Added \code{CheckMax} argument to the \code{PostPredSample} function, which provides an opportunity to check that none of the sampled parameter sets have a higher log-posterior than that in the supplied model object.}
+    \item{Added \code{theta} argument to the \code{*Smooth} wrapper functions, allowing users to supply initial values for the optimisation routine in the first step.}
+    \item{Minor bug fixes in \code{SmoothPlot}, relating to plotting of confidence intervals when \code{NonNeg} is \code{TRUE} and some intervals go negative.}
+    \item{Corrected code for calculation of ensemble consensus in \code{Ens*modeldef} functions - length of \code{Consensus} component of result wasn't always correct.}
+	\item{Improved documentation of some functions, correcting typos and clarifying mathematical notation.}
+  }
+}
+
 \section{Changes in version 0.0-8 (2024-05-28)}{
   \itemize{
     \item{Replaced out-of-date package acronyms in documentation with \code{TimSPEC} throughout.}
