@@ -6,8 +6,8 @@
 \usage{
 EnsSLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, discrepancy = "varying", 
               Groups = NULL, UseAlpha = TRUE, prior.pars = NULL, 
-              constrain = TRUE, Tiny = 1/kappa, ObsSmooth, Ens0Theta, 
-              messages = TRUE, Use.dlm = FALSE, debug = FALSE)
+              theta=NULL, constrain = TRUE, Tiny = 1/kappa, ObsSmooth, 
+              Ens0Theta, messages = TRUE, Use.dlm = FALSE, debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +20,7 @@ EnsSLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, discrepancy = "varying",
 }
   \item{UseAlpha}{Logical scalar indicating whether or not to include a scaling factor (\eqn{\alpha}{alpha} in the "Details" section of \code{\link{EnsEBMtrend.modeldef}}) when relating the ensemble consensus trend to that in the real climate system.  If \code{FALSE}, the value of \eqn{\alpha}{alpha} is set to 1.}
   \item{prior.pars}{An optional \code{4*2} (if \code{discrepancy} is \code{"constant"}) or \code{6*2} (if \code{discrepancy} is \code{"varying"}) matrix containing means and standard deviations of independent Gaussian priors for the log variance parameters in the model. If this is provided, maximum \emph{a posteriori} (or penalised maximum likelihood) estimation is used; otherwise standard maximum likelihood.}
+  \item{theta}{Optional initial value for parameter vector. If \code{NULL}, the routine will auto-initialise the optimisation in the first step.}
   \item{constrain}{Logical scalar controlling whether to impose sum-to-zero constraints across the ensemble members where necessary to make the model identifiable.}
   \item{Tiny}{A small positive value, used to replace negative initial estimates for variances (see \code{\link{SLLT.IniPar}})}
   \item{ObsSmooth}{Optional: result of a previous call to \code{\link{SLLTSmooth}} for the first column of \code{Y}. If present, this is used to help initialise the numerical search for an MLE if a "constant" model needs to be fitted, or if the resulting smooth is needed. Otherwise the relevant model will be fitted as part of this routine.}

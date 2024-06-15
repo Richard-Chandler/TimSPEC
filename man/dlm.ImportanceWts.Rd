@@ -21,9 +21,11 @@ dlm.ImportanceWts(samples, build, Y, prior.pars = NULL, debug = FALSE, ...)
   \item{\dots}{Other arguments to \code{build}}
 }
 \details{
-The data matrix \code{Y} is used to calculate the exact log-posterior for each element of theta, which is then compared with the information in \code{samples} to obtain importance weights.
+The data matrix \code{Y} is used to calculate the exact log-posterior for each sampled value, which is then compared with the log-density used to produce \code{samples} in order to obtain importance weights.
+
+The routine will issue a warning if the log posterior density of the any of the sampled values have a log posterior greater than that obtained from the \code{Mean} component of \code{samples}, because this indicates that the numerical optimisation failed when computing the MAP estimates from which the samples were derived. 
 }
-\value{A data frame containing three columns, and a row for each row of \code{samples}. The columns are \code{log.g} containing the values of \eqn{\log(g(\theta)/g(\hat{\theta}))}{log(g(theta) / g(theta.hat))} where \eqn{\hat{\theta}}{theta.hat} is the posterior mode; \eqn{\log(h(\theta)/h(\hat{\theta}))}{log(h(theta)/h(theta.hat))}; and the corresponding normalised importance weights.
+\value{A data frame containing three columns, and a row for each row of \code{samples}. The columns are \code{log.g} containing the values of \eqn{\log(g(\theta)/g(\hat{\theta}))}{log(g(theta) / g(theta.hat))} where \eqn{\hat{\theta}}{theta.hat} is the posterior mode; \eqn{\log(h(\theta)/h(\hat{\theta}))}{log(h(theta)/h(theta.hat))}; and the corresponding normalised importance weights. Here, \eqn{g(.)} is the density used to produce \code{samples} and \eqn{h(.)} is the posterior density. 
 }
 \references{
 Durbin, J. and Koopman, S. J. (2012). \emph{Time series analysis by state space methods (second

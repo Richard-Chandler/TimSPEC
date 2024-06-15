@@ -1,14 +1,14 @@
 \name{EnsEBMtrendSmooth}
 \alias{EnsEBMtrendSmooth}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{Postprocessing an exchangeable ensemble of time series using EBM-inspired dynamic linear models
+\title{Postprocessing an ensemble of time series from an exchangeable collection of simulators using EBM-inspired dynamic linear models
 }
 \description{Fits a model of the form defined by \code{\link{EnsEBMtrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals.}
 \usage{
 EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, C0=NULL, kappa = 1e+06, 
-                  prior.pars = NULL, UseAlpha = TRUE, UsePhi = TRUE, 
-                  constrain = TRUE, messages = TRUE, Use.dlm = FALSE, 
-                  debug = FALSE)
+                  prior.pars = NULL, theta=NULL, UseAlpha = TRUE, 
+                  UsePhi = TRUE, constrain = TRUE, messages = TRUE, 
+                  Use.dlm = FALSE, debug = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +20,7 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, C0=NULL, kappa = 1e+06,
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Variance used to initialise diffuse elements of the state vector.}
   \item{prior.pars}{Optional 2-column matrix containing the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertias). If this is provided, maximum \emph{a posteriori} (or penalised maximum likelihood) estimation is used; otherwise just standard maximum likelihood.}
+  \item{theta}{Optional initial value for parameter vector. If \code{NULL}, the routine will auto-initialise the optimisation in the first step.}
   \item{UseAlpha}{Logical scalar indicating whether or not to include a scaling factor (\eqn{\alpha}{alpha} in the "Details" section of \code{\link{EnsEBMtrend.modeldef}}) when relating the ensemble consensus trend to that in the real climate system.  If \code{FALSE}, the value of \eqn{\alpha}{alpha} is set to 1.}
   \item{UsePhi}{Controls whether or not to include thermal inertia parameters \eqn{\phi_{0}}{phi[0]} and \eqn{\phi_{1}}{phi[1]} in the model structure. If \code{FALSE}, both parameters are set to zero.}
   \item{constrain}{Logical scalar controlling whether to impose sum-to-zero constraints across the ensemble members where necessary to make the model identifiable.}
