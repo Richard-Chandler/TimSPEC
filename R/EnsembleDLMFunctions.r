@@ -1757,7 +1757,7 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
         z$Thetas[FailedIDs,] <- NewThetas
         if (Importance) {
           z$Weights[FailedIDs,] <- 
-             dlm.ImportanceWts(z$Thetas[FailedIDs,], build=Build, Y=Data, 
+             dlm.ImportanceWts(NewThetas, build=Build, Y=Data, 
                                prior.pars=ModelBundle$Theta$prior.pars,
                                debug=debug, ...)
 	      if (CheckMax & any(z$Weights$log.h>0)) {
