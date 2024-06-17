@@ -1788,8 +1788,18 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
                      WhichEls=WhichEls, ReplaceAll=ReplaceAll,
                      NonNeg=NonNeg, ...)
   if (Importance) {
+    #
+	#  NB dlm.ImportanceWts returns normalised weights: if there have been 
+	#  several calls e.g. due to the use of FailedIDs then different 
+	#  subsets will have been normalised separately. Option here is 
+	#  either to call dlm.ImportanceWts again (costly likelihood
+	#  calculations) or to just recalculate the weights themselves
+	#  from the values of log.h and log.g already contained in z$Weights
+	#
+	z$Weights$w <- exp(z$Weights$log.h - z$Weights$log.g)
+	z$Weights$w <- z$Weights$w / sum(z$Weights$w)
     SortedWts <- sort(z$Weights$w, decreasing=TRUE)
-    NWts <- length(z$Weights$w)
+    NWts <- nrow(z$Weights)
     if (sum(SortedWts[1:ceiling(NWts/10)]) > 0.8*sum(SortedWts)) {
       warning(paste("Importance sampling may be unreliable here:",
                     "more than 80% of the\n  total weight is",
