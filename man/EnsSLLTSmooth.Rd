@@ -7,7 +7,7 @@
 EnsSLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, discrepancy = "varying", 
               Groups = NULL, UseAlpha = TRUE, prior.pars = NULL, 
               theta=NULL, constrain = TRUE, Tiny = 1/kappa, ObsSmooth, 
-              Ens0Theta, messages = TRUE, Use.dlm = FALSE, debug = FALSE)
+              Ens0Theta, messages = TRUE, Use.dlm = FALSE, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -27,7 +27,8 @@ EnsSLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, discrepancy = "varying",
   \item{Ens0Theta}{Optional parameter vector for a previous fit of an "ensemble local linear trend" model with a constant discrepancy term. If present, this will be used to help initialise the numerical search for an MLE if a "varying" model needs to be fitted here. Otherwise the relevant constant-discrepancy model will be fitted as part of this routine.}
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
-  \item{debug}{As in \code{\link{dlmMLE}}.}
+  \item{debug}{As in \code{\link[dlm]{dlmMLE}}.}
+  \item{...}{Other arguments to \code{\link{dlm.SafeMLE}}.}
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model.}
 \value{A named list with three components:

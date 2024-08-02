@@ -109,6 +109,346 @@ covxfrm <- function(covmat,A) {
   A %*% covmat %*% t(A) 
 }
 ######################################################################
+num.deriv <- function(f, x0, xlo=-Inf, xhi=Inf, steps=NULL,
+                      shrink=1.4, maxit=10, relerr=1e-6,
+                      QuitEarly=NULL, ...) {
+  ######################################################################
+  #   Numerical differentiation. Arguments:
+  #
+  #	f	      The function to be differentiated
+  #	x0	    The point at which to evaluate the gradient
+  #	lb	    Vector of lower bounds on elements of x (either
+  #		      a scalar, or a vector the same length as x0)
+  #	ub	    Vector of upper bounds
+  #	steps   Vector of largest step sizes to consider when
+  #		      evaluating the gradient. Defaults to the larger
+  #		      of abs(x0)/10^4 and 0.001.
+  #	shrink	Amount by which to shrink the stepsize at each
+  #		      iteration, to obtain an improved estimate
+  # maxit   Maximum number of iterations
+  # relerr  Relative error required
+  # QuitEarly	Either NULL (the default) or a list containing 
+  #				  two elements, in which case it defines conditions 
+  #				  for the routine to exit early if a "surprising" value of 
+  #         f is found. In the latter case, the named elements of 
+  #				  the list should be "reference" (a numeric value against which to 
+  #				  compare the function evaluations in this routine) and 
+  #         "greater" (a logical scalar indicating whether to quit if 
+  #         a value f>reference is found - if FALSE, the function will quit
+  #         if a value f<reference is found).
+  #	...	    Any other arguments to f
+  #
+  #   This uses Ridders' implementation of Richardson's method - 
+  #   see Press et al. (1992), Section5.7 for example. The 
+  #   implementation here is basically that given by Press et al., 
+  #   translated from FORTRAN to R and adapted to handle boundaries 
+  #   (in which case a right- or left-hand derivative is evaluated 
+  #   as appropriate) and vector arguments. 1-sided derivatives are 
+  #   calculated by reflecting the function about the boundary, which 
+  #	  is equivalent to using function evaluations on one side of the
+  #	  boundary only - and correspondingly less accurate. For 1-sided 
+  #	  derivatives it may therefore be necessary to decrease the 
+  #	  default value of steps to obtain the required accuracy.
+  #
+  #	The value of the function is a list containing three elements,
+  #	as follows:
+  #
+  #	gradient	vector of length length(x0), containing
+  #				    the calculated derivatives
+  #	error		  Estimate of the errors in the computed
+  #				    gradients
+  # details		Data frame containing details of the calculations:
+  #      			column 1 is the element being computed, column 2 is 
+  #				    the iteration number, column 3 the value of the 
+  #				    function f and the remaining columns are the elements 
+  #				    of the function argument.
+  #	
+  ######################################################################
+  np <- length(x0); d <- numeric(np)
+  nb <- length(xlo)
+  if (nb > 1 & nb != np) stop("xlo and x0 must be the same length")
+  nb <- length(xhi)
+  if (nb > 1 & nb != np) stop("xhi and x0 must be the same length")
+  if (is.null(steps)) {
+    h <- pmax(abs(x0)*1e-4,1e-3) 
+  } else {
+    h <- steps
+  }
+  right <- (x0 == xlo); left <- (x0 == xhi)
+  f0 <- f(x0,...)
+  details <- data.frame(matrix(c(0, 0, f0, x0), nrow=1))
+  if (!is.null(names(x0))) {
+    names(details) <- c("Element", "Iteration", "Value", names(x0))
+  } else {
+    names(details) <- 
+      c("Element", "Iteration", "Value", paste("x[", 1:np, "]", sep=""))
+  }
+  if (!is.null(QuitEarly)) {
+    if (!isTRUE(all(c("reference", "greater") %in% names(QuitEarly)))) {
+      stop(paste("If non-NULL, QuitEarly must be a list containing",
+                 "elements\n'reference' and 'greater'", sep=" "))
+    }
+  }
+  shr2 <- shrink^2; err <- rep(Inf,np)
+  delta <- .Machine$double.eps
+  #
+  # Set initial step sizes for each parameter. 
+  #
+  hh <- pmin(h,(x0-xlo-delta),(xhi-delta-x0))
+  hh[left] <- pmin(h[left],(xhi-xlo-delta)[left])
+  hh[right] <- pmin(h[right],(xhi-xlo-delta)[right])
+  tight <- right & left; d[tight] <- NA
+  wanted.els <- (1:np)[!tight]
+  Done <- FALSE
+  for (p in wanted.els) {
+    if (Done) break # In case we bailed out during the last iteration
+    a <- matrix(nrow=maxit,ncol=maxit)
+    i <- 1; cnvrge <- FALSE
+    while (i <= maxit & !cnvrge & !Done) {
+      xx <- x0
+      if (!right[p]) {
+        xlo <- x0[p] - hh[p]; xx[p] <- xlo; f1 <- f(xx,...)
+        details <- rbind(details, c(p, i, f1, xx))
+        if (!is.null(QuitEarly)) Done <- QuitNow(f1, QuitEarly)
+        if (Done) break
+        #
+        #	For left derivatives, extrapolate symmetrically beyond the
+        #	upper limit
+        #
+        if (left[p]) f2 <- (2*f0) - f1
+      }
+      if (!left[p]) {
+        xhi <- x0[p] + hh[p]; xx[p] <- xhi; f2 <- f(xx,...)
+        details <- rbind(details, c(p, i, f2, xx))
+        if (!is.null(QuitEarly)) Done <- QuitNow(f2, QuitEarly)
+        if (Done) break
+        #
+        #	And for right derivatives, extrapolate beyond the lower
+        #	limit
+        #
+        if (right[p]) f1 <- (2*f0) - f2
+      }
+      a[1,i] <- (f2 - f1) / (2*hh[p])
+      #
+      #	This is the j-loop in Numerical Recipes. Although looping
+      #	is normally to be avoided in R, experimentation suggests
+      #	that in this case it's actally quicker than the corresponding
+      #	vector-based calculation - partly do do with the fact that 
+      #	in that case you have do do things like identify the 
+      #	location of the smallest value in the column etc., I guess
+      #
+      if (i > 1) {
+        fac <- shr2
+        for (j in 2:i) {
+          a[j,i] <- (a[j-1,i]*fac-a[j-1,i-1]) / (fac-1)
+          fac <- shr2*fac
+          errt <- max(abs(a[j,i]-a[j-1,i]),abs(a[j,i]-a[j-1,i-1]))
+          if (is.na(errt)) errt <- Inf
+          if (errt < err[p]) { 
+            err[p] <- errt
+            d[p] <- a[j,i]
+          }
+        }
+        cnvrge <- (abs(a[i,i]-a[i-1,i-1]) > 2*err[p])
+        if (is.na(cnvrge)) cnvrge <- FALSE
+        if (abs(d[p]) > relerr) {
+          cnvrge <- cnvrge & (abs(err[p]) < abs(relerr * d[p]))
+        }
+      }
+      hh[p] <- hh[p] / shrink; i <- i+1
+    }
+  }
+  list(gradient=d, error=err, details=details)
+}
+######################################################################
+num.hess <- function(f, x0, xlo=-Inf, xhi=Inf, steps=NULL, shrink=1.4,
+					maxit=10, relerr=1e-6, QuitEarly=NULL, ...) {
+######################################################################
+#       Numerical evaluation of a Hessian. Arguments:
+#
+#	  f	    The function to be differentiated
+#	  x0	  The point at which to evaluate the Hessian
+#	  xlo	  Vector of lower bounds on elements of x (either
+#		      a scalar, or a vector the same length as x0)
+#	  xhi	  Vector of upper bounds
+#	  steps	Vector of largest step sizes to consider for 
+#         finite-difference approximations. Default is
+#         approximately the square root of than that in 
+#		      num.deriv, because the denominator in each 
+#		      approximation is steps^2)
+#	  shrink	Amount by which to shrink the stepsize at each
+#		      iteration, to obtain an improved estimate
+#   maxit Maximum number of iterations
+#   relerr  Relative error required
+#   QuitEarly	Either NULL (the default) or a list containing 
+#				  two elements, in which case it defines conditions 
+#				  for the routine to exit early if a "surprising" value of 
+#         f is found. In the latter case, the named elements of 
+#				  the list should be "reference" (a numeric value against which to 
+#				  compare the function evaluations in this routine) and 
+#         "greater" (a logical scalar indicating whether to quit if 
+#         a value f>reference is found - if FALSE, the function will quit
+#         if a value f<reference is found).
+#	...	Any other arguments to f
+#
+# This uses polynomial extrapolation to the limit, in exactly
+# the same way as num.deriv(). The result is regarded is the
+# limit of a sequence of finite-difference approximations, 
+# evaluated at a sequence of points e1, e2, e3, ... 
+# which represent progressively smaller multiples of the 
+# initial value of steps. The finite difference approximation 
+#	actually used is, for off-diagonal elements,
+#
+#	{f(x1+h1,x2+h2)+f(x1-h1,x2-h2)-[f(x1+h1,x2-h2)+f(x1-h1,x2+h2)]}
+#       _______________________________________________________________
+#				4*h1*h2
+#
+#	or (f1 + f2 - f3 - f4) / (4*h1*h2), where h1 and h2 are 
+#	multiples of the e's. For diagonal elements the approximation
+#	is
+#
+#	{f(x+h) - f(x) - f(x) + f(x-h)} / h
+#
+#	- NB the use of h rather than 4h is *correct* here - repeated
+#   application of the first-order finite difference calculation
+#   yields a step size of 2h, which has been halved in this case.
+#
+#	The value of the function is a list containing two elements,
+#	as follows:
+#
+#	hessian	matrix containing the calculated Hessian. For
+#         all variables where the lower and upper bounds 
+#			    xlo and xhi are equal, a value of zero is returned. 
+#	error   Estimate of the errors in the computed hessian
+# details	Data frame containing details of the calculations:
+#      		columns 1 and 2 are the indices of the element being
+#				  computed, column 3 is the iteration number, column 4 the
+#         value of the function f and the remaining columns
+#				  are the elements of the function argument.
+#	
+######################################################################
+ np <- length(x0); d <- matrix(rep(0,np*np),nrow=np,ncol=np)
+ nb <- length(xlo)
+ if (nb > 1 & nb != np) stop("xlo and x0 must be the same length")
+ nb <- length(xhi)
+ if (nb > 1 & nb != np) stop("xhi and x0 must be the same length")
+ if (is.null(steps)) {
+  h <- pmax(abs(x0)*1e-2,1e-2) 
+ } else {
+  h <- steps
+ }
+ right <- (x0 == xlo); left <- (x0 == xhi)
+ tight <- right & left
+ if (any((right | left)[!tight])) {
+   stop("I don't know how to evaluate Hessian on a boundary")
+ }
+ if (!is.null(QuitEarly)) {
+   if (!isTRUE(all(c("reference", "greater") %in% names(QuitEarly)))) {
+     stop(paste("If non-NULL, QuitEarly must be a list containing",
+                "elements\n'reference' and 'greater'", sep=" "))
+   }
+ }
+ shr2 <- shrink^2; err <- matrix(rep(Inf,np*np),nrow=np)
+ delta <- .Machine$double.eps
+ oppsign <- c(1,-1)
+ f0 <- f(x0,...)
+ details <- data.frame(matrix(c(0, 0, 0, f0, x0), nrow=1))
+ if (!is.null(names(x0))) {
+   names(details) <- c("Idx1", "Idx2", "Iteration", "Value", names(x0))
+ } else {
+   names(details) <- 
+       c("Idx1", "Idx2", "Iteration", "Value", paste("x[", 1:np, "]", sep=""))
+ }
+ Done <- FALSE
+ for (p1 in (1:np)[!tight]) {
+   if (Done) break # In case we bailed out during the last iteration
+   for (p2 in (1:p1)[!tight[1:p1]]) {
+     if (Done) break
+     #
+     # Reset initial step sizes for each parameter. No need to set 
+     # tight values to NA here, because d contains NA on initialisation
+     #
+     hh <- pmin(h,(x0-xlo-delta),(xhi-delta-x0))
+     a <- matrix(nrow=maxit,ncol=maxit); els <- c(p1,p2)
+     i <- 1; cnvrge <- FALSE
+     while (i <= maxit & !cnvrge & !Done) {
+       xx <- x0
+       #
+       # Different finite difference approximations required on and off
+       # the diagonal
+       #
+       if (p1 == p2) {
+         xnew <- x0[p1] - hh[p1]; xx[p1] <- xnew; f1 <- f(xx,...)
+         details <- rbind(details, c(p1, p2, i, f1, xx))
+         if (!is.null(QuitEarly)) Done <- QuitNow(f1, QuitEarly)
+         if (Done) break
+         xnew <- x0[p1] + hh[p1]; xx[p1] <- xnew; f2 <- f(xx,...)
+         details <- rbind(details, c(p1, p2, i, f2, xx))
+         if (!is.null(QuitEarly)) Done <- QuitNow(f2, QuitEarly)
+         if (Done) break
+         a[1,i] <- ((f1 - f0) - (f0 - f2)) / (hh[p1]*hh[p1])
+       } else {
+         xnew <- x0[els] + hh[els]; xx[els] <- xnew; f1 <- f(xx,...)
+         details <- rbind(details, c(p1, p2, i, f1, xx))
+         if (!is.null(QuitEarly)) Done <- QuitNow(f1, QuitEarly)
+         if (Done) break
+         xnew <- x0[els] - hh[els]; xx[els] <- xnew; f2 <- f(xx,...)
+         details <- rbind(details, c(p1, p2, i, f2, xx))
+         if (!is.null(QuitEarly)) Done <- QuitNow(f2, QuitEarly)
+         if (Done) break
+         xnew <- x0[els] + (hh[els]*oppsign); xx[els] <- xnew; f3 <- f(xx,...)
+         details <- rbind(details, c(p1, p2, i, f3, xx))
+         if (!is.null(QuitEarly)) Done <- QuitNow(f3, QuitEarly)
+         if (Done) break
+         xnew <- x0[els] - (hh[els]*oppsign); xx[els] <- xnew; f4 <- f(xx,...)
+         details <- rbind(details, c(p1, p2, i, f4, xx))
+         if (!is.null(QuitEarly)) Done <- QuitNow(f4, QuitEarly)
+         if (Done) break
+         a[1,i] <- (f1 + f2 - f3 - f4) / (4*hh[p1]*hh[p2])
+       }
+       #
+       #	This is the j-loop in Numerical Recipes. Although looping
+       #	is normally to be avoided in R, experimentation suggests
+       #	that in this case it's actally quicker than the corresponding
+       #	vector-based calculation - partly do do with the fact that 
+       #	in that case you have do do things like identify the 
+       #	location of the smallest value in the column etc., I guess
+       #
+       if (i > 1) {
+         fac <- shr2 
+         for (j in 2:i) {
+           a[j,i] <- (a[j-1,i]*fac-a[j-1,i-1]) / (fac-1)
+           fac <- shr2*fac
+           errt <- max(abs(a[j,i]-a[j-1,i]),abs(a[j,i]-a[j-1,i-1]))
+           if (is.na(errt)) errt <- Inf
+           if (errt < err[p1,p2]) { 
+             err[p1,p2] <- errt
+             d[p1,p2] <- a[j,i]
+           }
+         }
+         cnvrge <- (abs(a[i,i]-a[i-1,i-1]) > 2*err[p1,p2]) 
+         if (is.na(cnvrge)) cnvrge <- FALSE
+         if (abs(d[p1,p2]) > relerr) {
+           cnvrge <- cnvrge & (abs(err[p1,p2]) < abs(relerr * d[p1,p2]))
+         }
+       }
+       hh[els] <- hh[els] / shrink; i <- i+1
+     }
+     d[p2,p1] <- d[p1,p2]
+     err[p2,p1] <- err[p1,p2]
+   }
+ }
+ list(hessian=d,error=err, details=details)
+}
+######################################################################
+QuitNow <- function(x, QuitEarly) { 
+  # 
+  # Utility function for use in num.deriv and num.hess
+  #
+  SignMult <- 2*as.numeric(QuitEarly$greater)-1 # 1 or -1
+  isTRUE(SignMult * (x-QuitEarly$reference) > 0)
+}
+######################################################################
 EnsMean <- function(Data, Groups=NULL, na.option=NULL) {
   #
   #  Calculates an ensemble mean series from its members. Arguments: 
@@ -658,7 +998,7 @@ which.diffuse <- function(GG) {
 }
 ######################################################################
 dlm.SafeLL <- function(theta, Y, build, prior.pars=NULL, 
-                       BigVal=1e12, debug=FALSE, ...) {
+                       BigVal=1e12, debug=FALSE, verbose=FALSE, ...) {
   #
   # "Safe" computation of a (penalised) log-likelihood for a dynamic 
   # linear model. This is a wrapper for the dlmLL routine in the dlm 
@@ -684,6 +1024,8 @@ dlm.SafeLL <- function(theta, Y, build, prior.pars=NULL,
   #         cause numerical instability when evaluating gradients
   #         etc. 
   # debug   As in dlmLL
+  # verbose If TRUE, print the parameter value and calculated 
+  #         (penalised) log-likelihood
   # ...     Other arguments passed to build
   #
   # If prior.pars is NULL then the function returns the result 
@@ -709,6 +1051,7 @@ dlm.SafeLL <- function(theta, Y, build, prior.pars=NULL,
   LL <- tryCatch(dlmLL(y=Y, mod=Model, debug=debug), 
                  error=function(e) { z <- Inf; attr(z, "error") <- e; z})
   if (!is.finite(LL)) {
+    warning("dlmLL failed: returning BigVal with error attribute", immediate.=verbose)
     err <- attr(LL, "error")
     LL <- BigVal
     attr(LL, "error") <- err
@@ -716,6 +1059,12 @@ dlm.SafeLL <- function(theta, Y, build, prior.pars=NULL,
     if (nrow(prior.pars)!=length(theta) | ncol(prior.pars) !=2) 
       stop("prior.pars should be a 2-column matrix with a row per element of theta")
     LL <- LL - sum(dnorm(theta, mean=prior.pars[,1], sd=prior.pars[,2], log=TRUE))
+  }
+  if (verbose) {
+   cat("(Penalised) log-likelihood from dlm.SafeLL: ", -round(LL,2),"\n")
+   cat("Value of theta for this penalised log-likelihood:\n")
+   print(theta)
+   cat("\n")
   }
   LL
 }
@@ -757,7 +1106,7 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
   # hessian       Controls whether to compute the hessian on exit
   #               from nlm(). The internal calculations within nlm()
   #               itself can be inaccurate, so this is done via a 
-  #               call to hessian() from the numDeriv package. 
+  #               call to the num.hess() routine (see above).
   # ...           Other arguments passed to build and nlm
   #
   # If Use.dlm is TRUE then the routine returns the result of a call
@@ -784,16 +1133,16 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
   #
   # Find the log-likelihood for the initial value:
   #
-  if (as.numeric(messages)>=1) {
-    cat("Initial value for theta:\n")
-    print(signif(theta.init, 5))
-  }
   if (Use.dlm) {
     if (!is.null(prior.pars)) warning("prior.pars is ignored when Use.dlm is TRUE")
     LL.init <- dlm.SafeLL(theta=theta.init, Y=Y, build=build, debug=debug, ...)
+    if (as.numeric(messages)>=1) {
+      cat("Initial value for theta:\n")
+      print(signif(theta.init, 5))
+      cat("Log-likelihood at initial value:", round(-LL.init,2),"\n")
+    }
     z <- dlmMLE(y=Y, parm=theta.init, build=build, control=list(fnscale=abs(LL.init), 
-                             parscale=pmax(0.1, abs(theta.init))), ...)
-    
+                                                                parscale=pmax(0.1, abs(theta.init))), ...)
   } else {
     #
     #   Here is a careful use of nlm. To protect against inappropriate 
@@ -810,13 +1159,31 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
     #   avoid it but it won't kill the gradient computations. 
     #
     NotDone <- TRUE
+    LL.init <- NULL
     BatchSize <- 20
     StepMax <- 1
+    StepTol <- 1e-6
     InitErr <- FALSE
     num.msg <- max(0, as.numeric(messages)-1)
     while(NotDone) {
-      LL.init <- dlm.SafeLL(theta=theta.init, Y=Y, build=build, 
-                            prior.pars=prior.pars, debug=debug, ...)
+      #
+      #	  Need to handle ... arguments carefully here, because they could 
+      #   relate to either dlm.SafeLL, build or nlm
+      #
+      ArgsGiven <- c(as.list(environment()), list(...))
+      names(ArgsGiven)[names(ArgsGiven)=="theta.init"] <- "theta"
+      ArgsNeeded <- c(formals(dlm.SafeLL), formals(build))
+      ArgsNeeded <- ArgsNeeded[!duplicated(names(ArgsNeeded))]
+      ArgsNeeded <- ArgsNeeded[!(names(ArgsNeeded)=="...")]
+      LLArgs <- c(ArgsGiven[names(ArgsGiven) %in% names(ArgsNeeded)],
+                  ArgsNeeded[!(names(ArgsNeeded) %in% names(ArgsGiven))])
+      if (is.null(LL.init)) LL.init <- do.call(dlm.SafeLL, LLArgs)
+      if (!is.null(par.names)) names(theta.init) <- par.names
+      if (as.numeric(messages) > 0) {
+        cat("Initial value for theta:\n")
+        print(signif(theta.init, 5))
+        cat("(Penalised) log-likelihood at initial value:", round(-LL.init,2),"\n")
+      }
       #
       #   Bail out if initial value calculation failed
       #
@@ -824,25 +1191,92 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
         warning(paste("dlm.SafeLL failed at initial value of theta -", 
                       "error message was\n ", 
                       attr(LL.init, "error")$message), immediate.=TRUE)
-        z <- list(par=theta.init, value=Inf, code=-1,
-                  counts=0)
+        z <- list(par=theta.init, value=Inf, code=-1, counts=0)
         if (!is.null(par.names)) names(z$par) <- par.names
         if (!(Use.dlm | is.null(prior.pars))) z$prior.pars <- prior.pars
         class(z) <- "dlmMLE"
         return(z)
       }
       z <- try(nlm(dlm.SafeLL, p=theta.init, Y=Y, build=build,
-                   prior.pars=prior.pars, BigVal=LL.init+1e3, 
+                   prior.pars=prior.pars, BigVal=LL.init+1, 
                    typsize=pmax(abs(theta.init), 0.1), 
-                   fscale=abs(LL.init), stepmax=StepMax, hessian=FALSE, 
-                   iterlim=BatchSize, gradtol=1e-4, print.level=num.msg, 
-                   ...), silent=TRUE)
+                   fscale=abs(LL.init), stepmax=StepMax, steptol=StepTol,
+                   hessian=FALSE, iterlim=BatchSize, gradtol=1e-4, 
+                   print.level=num.msg, ...), silent=TRUE)
       if (isTRUE(class(z)=="try-error")) { # When nlm throws an Inf
-        BatchSize <- BatchSize / 2
+        warning(paste("nlm failed: error message was", as.character(z), sep="\n"),
+                immediate.=TRUE)
+        BatchSize <- floor(BatchSize / 2)
+        if (BatchSize > 0) {
+          if (as.numeric(messages) > 0) {
+            cat("Trying again, reducing number of nlm iterations for each batch ...\n")
+          }
+        } else {
+          NotDone <- FALSE # Bail out
+          warning("Unable to fix nlm failure: result is probably not global optimum",
+                  immediate.=TRUE)
+        }
+      } else if (z$code==3) {
+        theta.init <- z$estimate
+        LL.init <- z$minimum
+        StepTol <- StepTol / 10
+        if (as.numeric(messages) > 0) {
+          cat("Reducing StepTol and retrying optimisation from best value so far ...\n")
+        }	  
       } else if (z$code %in% 4:5) { # Iteration limit exceeded: move theta.init & try again
         theta.init <- z$estimate
-        if (z$code==5) StepMax <- 1.2*StepMax # Increase StepMax if it was too small
+        LL.init <- z$minimum
+        if (as.numeric(messages) > 0) {
+          cat("Retrying optimisation from best value found so far ...\n")
+          StepTol <- 1e-6
+          StepMax <- 1
+          BatchSize <- 20
+        }
+        if (z$code==5) {
+          theta.init <- z$estimate
+          LL.init <- z$minimum
+          StepMax <- 1.2*StepMax # Increase StepMax if it was too small
+          if (as.numeric(messages) > 0) {
+            cat("Increasing value of StepMax in optimisation ...\n")
+          }
+        }
       } else NotDone <- FALSE
+      if (hessian & !NotDone) { # Only do this next bit if we think we've finished
+        #
+        #   Calculate hessian as part of the "while" loop, because the extra Function
+        #   evaluations may find better parameter values. While doing this, note that
+        #   dlmLL sometimes throws infinite values which screw up the Hessian
+        #   calculations. Operational workaround: replace these infinite values 
+        #   with something slightly larger (i.e. a bit worse but not much) than 
+        #   the optimum. This will tend to suggest limited curvature, hence 
+        #   increasing standard errors etc.
+        #
+        #   Note also the QuitEarly argument: if the hessian calculations
+        #   find an "appreciably better" log-likelihood then bail out and
+        #   re-optimise. There's not much point in bailing out at an
+        #   intermediate stage if the hessian finds a parameter value
+        #   with a very small improvement, because in that case 
+        #   re-optimising isn't likely to change things very much and
+        #   we'll just be wasting time to get back where we started.
+        #
+        if (as.numeric(messages) > 0) cat("Now calculating hessian ... \n")
+        HessCalc <- 
+          num.hess(dlm.SafeLL, x0=z$estimate, Y=Y, build=build, 
+                   prior.pars=prior.pars, BigVal=z$minimum+1e-3, 
+                   verbose=(num.msg>1), relerr=1e-3, 
+                   QuitEarly=list(reference=z$minimum-0.01, greater=FALSE), 
+                   ...)
+        if (any(HessCalc$details$Value < z$minimum)) {
+          NotDone <- TRUE # OK, we haven't finished after all
+          theta.init <- as.numeric(HessCalc$details[which.min(HessCalc$details$Value),-(1:4)])
+          LL.init <- min(HessCalc$details$Value)
+          if (as.numeric(messages) > 0) {
+            cat("Found better parameters while calculating hessian: now re-optimising ...\n")
+          } else {
+            if (as.numeric(messages) > 0) cat("Hessian calculation complete.\n")
+          }
+        }
+      }
     }
     names(z)[names(z)=="minimum"] <- "value"
     names(z)[names(z)=="estimate"] <- "par"
@@ -850,25 +1284,17 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
     z$convergence <- ifelse(z$code %in% 1:2, 0, ifelse(z$code==4, 1, 2))
   }
   if (z$convergence == 0) {
-    if (num.msg>0) cat("numerical optimiser reports successful convergence\n")
+    if (as.numeric(messages) > 0) cat("Numerical optimiser reports successful convergence\n")
   } else {
-    warning("numerical optimiser reports possible convergence problem")
+    warning("numerical optimiser reports possible convergence problem", immediate.=TRUE)
   }
   if (!is.null(par.names)) {
     names(z$par) <- par.names
   }
   if (hessian) {
+    z$hessian <- HessCalc$hessian
     #
-    #   dlmLL sometimes throws infinite values which screw up the Hessian
-    #   calculations. Operational workaround: replace these infinite values 
-    #   with something slightly larger (i.e. a bit worse but not much) than 
-    #   the optimum. This will tend to suggest limited curvature, hence 
-    #   increasing standard errors etc. 
-    #
-    z$hessian <- hessian(dlm.SafeLL, x=z$par, Y=Y, build=build,
-                         prior.pars=prior.pars, BigVal=z$value, ...) 
-    #
-    #   Now check for positive definiteness; if the hessian isn't PD
+    #   Check the hessian for positive definiteness; if it isn't PD
     #   then tweak it so that it *is*. Do the check using both 
     #   chol and eigen, because both may be used later (and they
     #   give slightly different results!)
@@ -876,15 +1302,21 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
     z$HessFail <- isTRUE(class(try(chol(z$hessian), silent=TRUE)) == "try-error")
     if (!z$HessFail) z$HessFail <- !all(eigen(z$hessian)$values > 0)
     if (z$HessFail) {
-      warning("Hessian isn't positive definite: shrinking eigenvalues towards their mean")
       HessPD <- z$hessian
       EigenVals <- eigen(HessPD)$values
-      while(min(EigenVals) < 0) {
-        HessPD <- 0.95*HessPD + 
-          ( (0.05*sum(EigenVals) / nrow(HessPD)) * diag(rep(1, nrow(HessPD))) )
-        EigenVals <- eigen(HessPD)$values
+      if (sum(EigenVals)<0) {
+        warning("Hessian isn't positive definite: check optimisation results", 
+                immediate.=TRUE)
+      } else {
+        warning("Hessian isn't positive definite: shrinking eigenvalues towards their mean",
+                immediate.=TRUE)
+        while(min(EigenVals) < 0) {
+          HessPD <- 0.95*HessPD + 
+            ( (0.05*sum(EigenVals) / nrow(HessPD)) * diag(rep(1, nrow(HessPD))) )
+          EigenVals <- eigen(HessPD)$values
+        }
+        z$hessian <- HessPD
       }
-      z$hessian <- HessPD
     }
     if (!is.null(par.names)) row.names(z$hessian) <- colnames(z$hessian) <- par.names
   }
@@ -2140,7 +2572,16 @@ SLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, prior.pars=NULL,
   #
   #  Kalman Smoother, and return result
   #
-  Smooth <- dlmSmooth(Y, Model, debug=debug)
+  Smooth <- tryCatch(dlmSmooth(Y, Model, debug=debug), 
+                     error=function(e) { 
+                       z <- rep(NA, length=Y)
+                       attr(z, "error") <- e; z
+                       }
+                     )
+  if (!is.null(attr(Smooth, "error"))) {
+    warning(paste("dlmSmooth failed - error message was\n ", 
+                  attr(Smooth, "error")$message), immediate.=TRUE)
+  }
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
@@ -2300,7 +2741,7 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
 EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying", 
                           Groups=NULL, UseAlpha=TRUE, prior.pars=NULL, theta=NULL,
 						  constrain=TRUE, Tiny=1/kappa, ObsSmooth, Ens0Theta, 
-                          messages=TRUE, Use.dlm=FALSE, debug=FALSE) {
+                          messages=TRUE, Use.dlm=FALSE, debug=FALSE, ...) {
   #
   #  Fits and applies a model of the form defined by EnsSLLT.modeldef or
   #  EnsSLLT0.modeldef. The arguments are:
@@ -2360,6 +2801,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
   #   debug     Logical: argument passed to dlm routines to control
   #             whether to use faster C code (the default), or 
   #             slower R code which allows problem tracing. 
+  #	  ...       Additional arguments to dlm.SafeMLE
   #
   #  The function returns a list with three components: the first is the 
   #  object containing results of the maximum likelihood parameter estimation, 
@@ -2380,7 +2822,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
   if (missing("ObsSmooth")) 
     ObsSmooth <- SLLTSmooth(Y[,1], messages=FALSE, Use.dlm=Use.dlm, 
                             m0=m0[1:2], C0=C0[1:2, 1:2],
-                            kappa=kappa, debug=debug)
+                            kappa=kappa, debug=debug, ...)
   #
   #  Now fit a constant-discrepancy model if this is needed, which is the 
   #  case EITHER if discrepancy=="constant" OR if discrepancy=="varying" and
@@ -2422,7 +2864,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
                   prior.pars=CurPriors, constrain=constrain, 
                   hessian=(discrepancy=="constant"), par.names=par.names, 
                   Use.dlm=Use.dlm, 
-				  messages=(messages & discrepancy=="constant"), debug=debug)
+				  messages=(messages & discrepancy=="constant"), debug=debug, ...)
   }
   if (discrepancy=="varying") {
     par.names <- c("alpha", "log(sigsq[0])", "log(tausq[0])", 
@@ -2462,7 +2904,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
       Model0 <- 
         SLLTSmooth(Death.hat, m0=m0.0, C0=C0.0, kappa=kappa, 
                        prior.pars=cur.priors, 
-                       messages=FALSE, Use.dlm=Use.dlm, debug=debug)
+                       messages=FALSE, Use.dlm=Use.dlm, debug=debug, ...)
       theta.init[4] <- Model0$Theta$par[2] # Slope innovation parameter
       #
       #  For theta[6], calculate the variance of the innovations for the
@@ -2480,7 +2922,7 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
                   discrepancy="varying", UseAlpha=UseAlpha,
                   prior.pars=prior.pars, constrain=constrain, 
                   hessian=TRUE, messages=messages, par.names=par.names, 
-                  Use.dlm=Use.dlm, debug=debug)
+                  Use.dlm=Use.dlm, debug=debug, ...)
   }
   Model <- 
     EnsSLLT.modeldef(thetahat$par, m0=m0, C0=C0, kappa=kappa, 
@@ -2493,7 +2935,16 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
   #
   #  Kalman Smoother, and return result
   #
-  Smooth <- dlmSmooth(Y, Model, debug=debug)
+  Smooth <- tryCatch(dlmSmooth(Y, Model, debug=debug), 
+                     error=function(e) { 
+                       z <- rep(NA, length=Y)
+                       attr(z, "error") <- e; z
+                     }
+  )
+  if (!is.null(attr(Smooth, "error"))) {
+    warning(paste("dlmSmooth failed - error message was\n ", 
+                  attr(Smooth, "error")$message), immediate.=TRUE)
+  }
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
@@ -2548,7 +2999,7 @@ EBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL,
 ######################################################################
 EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE, 
                            prior.pars=NULL, theta=NULL, messages=TRUE, 
-                           Use.dlm=FALSE, debug=FALSE) {
+                           Use.dlm=FALSE, debug=FALSE, ...) {
   #
   #   Fits and applies a model of the form defined by EBMtrend.modeldef.
   #   Arguments:
@@ -2570,6 +3021,7 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE,
   #	  theta	      Optional initial value for parameter vector. If NULL,
   #               the routine will auto-initialise the optimisation
   #   messages    Controls whether to print progress to screen. 
+  #   ...		  Additional arguments to dlm.SafeMLE
   #
   #   The function returns a list with three components: the first is 
   #   the object containing parameter estimation results, the second is 
@@ -2590,7 +3042,7 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE,
     }
     SLLTModel0 <- 
       SLLTSmooth(Y, messages=FALSE, Use.dlm=Use.dlm, m0=m0[1:2], 
-                 C0=C0[1:2, 1:2], kappa=kappa, debug=debug)
+                 C0=C0[1:2, 1:2], kappa=kappa, debug=debug, ...)
     theta.init <- SLLTModel0$Theta$par
     if (UsePhi) {
       theta.init <- c(theta.init, 5) # the "5" is logit(0.99), roughly: thus initialising phi at ~1
@@ -2607,7 +3059,7 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE,
     dlm.SafeMLE(theta.init, Y, EBMtrend.modeldef, Xt=Xt, m0=m0, 
                 C0=C0, kappa=kappa, prior.pars=prior.pars, 
                 UsePhi=UsePhi, hessian=TRUE, par.names=par.names, 
-                Use.dlm=Use.dlm, messages=messages, debug=debug)
+                Use.dlm=Use.dlm, messages=messages, debug=debug, ...)
   Model <- EBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
                              kappa=kappa, UsePhi=UsePhi)
   if (as.numeric(messages)>0) {
@@ -2617,7 +3069,16 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE,
   #
   #  Kalman Smoother, and return result
   #
-  Smooth <- dlmSmooth(Y, Model, debug=debug)
+  Smooth <- tryCatch(dlmSmooth(Y, Model, debug=debug), 
+                     error=function(e) { 
+                       z <- rep(NA, length=Y)
+                       attr(z, "error") <- e; z
+                     }
+  )
+  if (!is.null(attr(Smooth, "error"))) {
+    warning(paste("dlmSmooth failed - error message was\n ", 
+                  attr(Smooth, "error")$message), immediate.=TRUE)
+  }
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
@@ -2770,7 +3231,7 @@ EnsEBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL, kappa=1e6,
 EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6, 
                               prior.pars=NULL, theta=NULL, UseAlpha=TRUE, 
 							  UsePhi=TRUE, constrain=TRUE, messages=TRUE, 
-							  Use.dlm=FALSE, debug=FALSE) {
+							  Use.dlm=FALSE, debug=FALSE, ...) {
   #
   #  Fits and applies a model of the form defined by EnsEBMtrend.modeldef.
   #  Arguments: 
@@ -2810,6 +3271,7 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
   #   debug   Logical: argument passed to dlm routines to control
   #           whether to use faster C code (the default), or slower 
   #           R code which allows problem tracing. 
+  #   ...     Other arguments to dlm.SafeMLE.
   #
   #  The function returns a list with three components: the first is the
   #  object containing results of the maximum likelihood parameter estimation, 
@@ -2843,7 +3305,7 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
     Model0 <- 
       EBMtrendSmooth(Y[,1], Xt, m0=m0.0, C0=C0.0, 
                      kappa=kappa, UsePhi=UsePhi, prior.pars=cur.priors, 
-                     messages=FALSE,  Use.dlm=Use.dlm, debug=debug)
+                     messages=FALSE,  Use.dlm=Use.dlm, debug=debug, ...)
     theta.init[2:3] <- Model0$Theta$par[1:2] # sigsq.0 and tausq.0
     if (UsePhi) theta.init[7] <- Model0$Theta$par[3] # phi.0
     EnsembleMean <- EnsMean(Y, Groups)
@@ -2860,7 +3322,7 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
     Model0 <- 
       EBMtrendSmooth(Death.hat, Xt, m0=m0.0, C0=C0.0, kappa=kappa, 
                      UsePhi=UsePhi, prior.pars=cur.priors, 
-                     messages=FALSE, Use.dlm=Use.dlm, debug=debug)
+                     messages=FALSE, Use.dlm=Use.dlm, debug=debug, ...)
     theta.init[4] <- Model0$Theta$par[2] # Slope innovation parameter
     if (UsePhi) theta.init[8] <- Model0$Theta$par[3]    
     theta.init[5:6] <- SLLT.IniPar(Y[,-1]-EnsembleMean)
@@ -2879,7 +3341,7 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
                 C0=C0, kappa=kappa, prior.pars=prior.pars, NRuns=NRuns, 
                 Groups=Groups, constrain=constrain, UseAlpha=UseAlpha, 
                 UsePhi=UsePhi, hessian=TRUE, par.names=par.names, 
-                Use.dlm=Use.dlm, messages=messages, debug=debug)
+                Use.dlm=Use.dlm, messages=messages, debug=debug, ...)
   Model <- 
     EnsEBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
                          kappa=kappa, NRuns=NRuns, Groups=Groups, 
@@ -2892,7 +3354,16 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
   #
   #  Kalman Smoother, and return result
   #
-  Smooth <- dlmSmooth(Y, mod=Model, debug=debug)
+  Smooth <- tryCatch(dlmSmooth(Y, Model, debug=debug), 
+                     error=function(e) { 
+                       z <- rep(NA, length=Y)
+                       attr(z, "error") <- e; z
+                     }
+  )
+  if (!is.null(attr(Smooth, "error"))) {
+    warning(paste("dlmSmooth failed - error message was\n ", 
+                  attr(Smooth, "error")$message), immediate.=TRUE)
+  }
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
@@ -3180,7 +3651,7 @@ EnsEBM2waytrend.NegLL <-
 EnsEBM2waytrendSmooth <- 
   function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, Groups, prior.pars=NULL, 
            theta=NULL, interactions="none", UseAlpha=TRUE, UsePhi=TRUE, 
-           constrain=TRUE, messages=TRUE, Use.dlm=FALSE, debug=FALSE) {
+           constrain=TRUE, messages=TRUE, Use.dlm=FALSE, debug=FALSE, ...) {
   #
   #  Fits and applies a model of the form defined by EnsEBM2waytrend.modeldef.
   #  Arguments: 
@@ -3238,6 +3709,7 @@ EnsEBM2waytrendSmooth <-
   #           currently call dlm.SafeMLE() due to a memory leak in the C 
   #           code for dlmLL. 
   #   debug   As in dlmMLE. 
+  #   ...     Additional arguments to dlm.SafeMLE
   #
   #  The function returns a list with three components: the first is the 
   #  object containing results of the maximum likelihood parameter 
@@ -3269,7 +3741,7 @@ EnsEBM2waytrendSmooth <-
     cur.priors <- prior.pars[if (UsePhi) c(2:3,7) else 2:3, ]
     Model0 <- EBMtrendSmooth(Y[,1], Xt, m0=m0[1:3], kappa=kappa, UsePhi=UsePhi, 
                              prior.pars=cur.priors, messages=FALSE, 
-                             Use.dlm=Use.dlm)
+                             Use.dlm=Use.dlm, debug=debug, ...)
     theta.init[2:3] <- Model0$Theta$par[1:2] # sigsq.0 and tausq.0
     if (UsePhi) theta.init[7] <- Model0$Theta$par[3] # phi.0
     #
@@ -3286,7 +3758,7 @@ EnsEBM2waytrendSmooth <-
     Model0 <- 
       EBMtrendSmooth(Death.hat, Xt, m0=m0.0, C0=C0.0, kappa=kappa, 
                      UsePhi=UsePhi, prior.pars=cur.priors, messages=FALSE, 
-                     Use.dlm=Use.dlm)
+                     Use.dlm=Use.dlm, debug=debug, ...)
     theta.init[4] <- Model0$Theta$par[2]
     if (UsePhi) theta.init[8] <- Model0$Theta$par[3]    
     theta.init[5:6] <- SLLT.IniPar(Y[,-1]-EnsembleMean)
@@ -3307,7 +3779,7 @@ EnsEBM2waytrendSmooth <-
                 Groups=Groups, interactions=interactions, 
                 UseAlpha=UseAlpha, UsePhi=UsePhi, constrain=constrain, 
                 debug=debug, hessian=TRUE, par.names=par.names, 
-                Use.dlm=Use.dlm, messages=messages)  
+                Use.dlm=Use.dlm, messages=messages, ...)  
   Model <- 
     EnsEBM2waytrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
                              kappa=kappa, Groups=Groups, 
@@ -3321,6 +3793,15 @@ EnsEBM2waytrendSmooth <-
   #
   #  Kalman Smoother, and return result
   #
-  Smooth <- dlmSmooth(Y, mod=Model, debug=debug)
+  Smooth <- tryCatch(dlmSmooth(Y, Model, debug=debug), 
+                     error=function(e) { 
+                       z <- rep(NA, length=Y)
+                       attr(z, "error") <- e; z
+                     }
+  )
+  if (!is.null(attr(Smooth, "error"))) {
+    warning(paste("dlmSmooth failed - error message was\n ", 
+                  attr(Smooth, "error")$message), immediate.=TRUE)
+  }
   list(Theta=thetahat, Model=Model, Smooth=Smooth)
 }

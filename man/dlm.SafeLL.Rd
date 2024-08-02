@@ -7,7 +7,8 @@
 library. It (a) handles situations where \code{\link{dlmLL}} returns an error or an infinite  value (b) is designed for use in calls to \code{\link{nlm}} rather than \code{\link{optim}} when estimating parameters (c) allows for maximisation of a \emph{penalised} likelihood which can be regarded as an approximation to a Bayesian posterior.
 }
 \usage{
-dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, debug = FALSE, ...)
+dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, 
+           debug = FALSE, verbose=FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,9 +19,11 @@ dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, debug = FALSE, ..
   
   If \code{NULL} (the default), no prior information is used. 
 }
-  \item{BigVal}{Value to return in case \code{\link{dlmLL}} fails. This should be much larger than any reasonably expected value of the negative (penalised) log-likelihood, but not so large as to cause numerical instability when evaluating gradients etc.
+  \item{BigVal}{Value to return in case \code{\link{dlmLL}} fails. This should be larger than any reasonably expected value of the negative (penalised) log-likelihood, but not so large as to cause numerical instability when evaluating gradients etc.
 }
   \item{debug}{As in \code{\link{dlmLL}}
+}
+  \item{verbose}{Logical scalar. If \code{TRUE}, the value of \code{theta} will be printed along with the computed (penalised) log-likelihood. This is useful for debugging when the function is wrapped in calls to other routines such as \code{\link[stats]{nlm}}.
 }
   \item{\dots}{Other arguments to \code{build}}
 }

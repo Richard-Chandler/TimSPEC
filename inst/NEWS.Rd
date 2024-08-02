@@ -1,6 +1,17 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
+\section{Changes in version 0.0-10 (2024-07-19)}{
+  \itemize{
+  \item{Replaced numerical differentiation routines from the \code{numDeriv} library with bespoke routines \code{\link{num.deriv}} and \code{\link{num.hess}} which store the interim calculations: this is potentially useful when optimisation of a log-likelihood fails, because the interim calculations may find a parameter value with a higher log-likelihood than the alleged optimum.}
+  \item{Added \code{verbose} argument to \code{\link{dlm.SafeLL}} to help with debugging.}
+  \item{Added trap to avoid infinite loop when adjusting hessian to ensure positive definiteness in \code{\link{dlm.SafeMLE}}.}
+  \item{Added information / warning messages to help track progress in \code{\link{dlm.SafeMLE}} when \code{messages} is \code{TRUE} or at least 1.}
+  \item{Added a \code{...} argument to all of the \code{*Smooth} routines, to allow options to be passed to \code{\link[stats]{nlm}} when optimising the (penalised) log-likelihood.}
+  \item{Fixed some typos in the help pages.}
+  }
+}
+
 \section{Changes in version 0.0-9 (2024-06-13)}{
   \itemize{
   \item{Added \code{CheckMax} argument to the \code{PostPredSample} function, which provides an opportunity to check that none of the sampled parameter sets have a higher log-posterior than that in the supplied model object.}

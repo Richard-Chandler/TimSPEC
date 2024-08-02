@@ -1,4 +1,5 @@
-export("covxfrm", "CumulativeWeightPlot", "dlm.ImportanceWts",
+export("covxfrm", "num.deriv", "num.hess", 
+       "CumulativeWeightPlot", "dlm.ImportanceWts",
        "dlm.ObsPred", "dlm.SafeLL", "dlm.SafeMLE", "dlm.ThetaSample",
        "dmvnorm.SpD", "dmvt.SpD", "EBMtrend.modeldef",
        "EBMtrendSmooth", "EnsEBM2waytrend.modeldef",
@@ -9,7 +10,7 @@ export("covxfrm", "CumulativeWeightPlot", "dlm.ImportanceWts",
        "PlotEnsTS", "PostPred.VidFrames", "PostPredSample",
        "SampleObs", "SampleStates", "SLLT.IniPar", "SLLT.modeldef",
        "SLLTSmooth", "SmoothPlot", "summary.dlmMLE", "which.diffuse")
-import(dlm, numDeriv, magick)
+import(dlm, magick)
 importFrom("stats", "lm")
 importFrom(Hmisc, "wtd.quantile")
 importFrom("grDevices", "col2rgb", "dev.off", "grey", "hcl.colors", "png", "rgb")

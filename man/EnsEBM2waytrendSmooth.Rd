@@ -7,7 +7,7 @@
 EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups, 
                       prior.pars = NULL, theta=NULL, interactions = "none", 
                       UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE,
-                      messages = TRUE, Use.dlm = FALSE, debug = FALSE)
+                      messages = TRUE, Use.dlm = FALSE, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,6 +26,7 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups,
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
   \item{debug}{As in \code{\link{dlmMLE}}.}
+  \item{...}{Other arguments to \code{\link{dlm.SafeMLE}}.}
 }
 
 \value{A named list with three components:
