@@ -8,7 +8,7 @@
 EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, C0=NULL, kappa = 1e+06, 
                   prior.pars = NULL, theta=NULL, UseAlpha = TRUE, 
                   UsePhi = TRUE, constrain = TRUE, messages = TRUE, 
-                  Use.dlm = FALSE, debug = FALSE)
+                  Use.dlm = FALSE, debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -27,6 +27,7 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, C0=NULL, kappa = 1e+06,
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
   \item{debug}{As in \code{\link{dlmMLE}}.}
+  \item{...}{Other arguments to \code{\link{dlm.SafeMLE}}.}
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model.}
 \value{A named list with three components:
@@ -62,12 +63,13 @@ m0 <- rep(0, 3*((length(unique(GCMIDs))+1)))
 m0[1] <- 14  # Prior expectation of global mean temperature in 1949
 k <- 25
 
-## Fit and smooth the observations (this could take a few minutes)
+## Fit and smooth the observations (this could take a few minutes,
+## so set messages to TRUE to track progress)
 EnsEBMFit <- 
   EnsEBMtrendSmooth(as.matrix(GlobalTemps585[,-1]), Xt=ERF585$NetERF,
                               Groups=as.numeric(as.factor(GCMIDs)), 
                               m0=m0, kappa=k, prior.pars=priors,
-                              messages=FALSE)
+                              messages=TRUE)
                             
 ## Examine fitted mimic, and plot
 summary(EnsEBMFit$Theta)

@@ -2,7 +2,7 @@
 \alias{dlm.SafeMLE}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{"Safe" maximum likelihood estimation for a dynamic linear model}
-\description{This replaces the \code{\link{dlmMLE}} routine in the \pkg{dlm} library, which can be unstable. It uses \code{\link[stats]{nlm}} rather than \code{\link{optim}} for the optimisation.
+\description{This replaces the \code{\link{dlmMLE}} routine in the \pkg{dlm} library, which can be unstable. It uses \code{\link[stats]{nlm}} rather than \code{\link[stats]{optim}} for the optimisation.
 }
 \usage{
 dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE, 
@@ -22,7 +22,7 @@ dlm.SafeMLE(theta.init, Y, build, debug = FALSE, Use.dlm = FALSE,
   
   \strong{Note:} if \code{messages} is numeric and greater than 1, it's quite likely that the routine will issue repeated messages `\code{Iteration limit exceeded. Algorithm failed.}'. This is nothing to worry about: it arises because it calls \code{\link[stats]{nlm}} repeatedly with a relatively small number of iterations, at each stage updating the \code{\link[stats]{nlm}} control parameters to try and stabilise the subsequent calculations. The `Iteration limit exceeded' message comes from \code{\link[stats]{nlm}} on exit from each of these intermediate calls. 
   }
-  \item{hessian}{Controls whether to compute the hessian on exit from \code{\link[stats]{nlm}}. The internal calculations within \code{\link[stats]{nlm}} itself can be inaccurate, so this is done via a call to \code{\link[numDeriv]{hessian}} from the \pkg{numDeriv} package.}
+  \item{hessian}{Controls whether to compute the hessian on exit from \code{\link[stats]{nlm}}. The internal calculations within \code{\link[stats]{nlm}} itself can be inaccurate, so this is done via a call to \code{\link{num.hess}}.}
   \item{\dots}{Other arguments passed to \code{build} and \code{\link[stats]{nlm}}}
 }
 \details{If \code{Use.dlm} is \code{FALSE} and \code{prior.pars} is non-\code{NULL}, the routine minimises the negative log posterior density (equivalently the negative penalised log-likelihood) for the parameters; in this case, the value of \code{prior.pars} is also included in the list result (see below) for use by routines such as \code{\link{summary.dlmMLE}}. Otherwise it minimises the unpenalised log-likelihood. 
