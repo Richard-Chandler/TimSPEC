@@ -1,9 +1,10 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
-\section{Changes in version 0.0-10 (2024-07-19)}{
+\section{Changes in version 0.1-0 (2024-08-03)}{
+There are some substantial changes in the optimisation algorithms used to find maximum \emph{a posterior} estimates in this version. The fitting routines are now slower than in previous versions, but more accurate. 
   \itemize{
-  \item{Replaced numerical differentiation routines from the \code{numDeriv} library with bespoke routines \code{\link{num.deriv}} and \code{\link{num.hess}} which store the interim calculations: this is potentially useful when optimisation of a log-likelihood fails, because the interim calculations may find a parameter value with a higher log-likelihood than the alleged optimum.}
+  \item{Replaced numerical differentiation routines from the \code{numDeriv} library with bespoke routines \code{\link{num.deriv}} and \code{\link{num.hess}} which store the interim calculations: this is potentially useful when optimisation of a log-likelihood fails, because the interim calculations may find a parameter value with a higher log-likelihood than the alleged optimum. The \code{\link{dlm.SafeMLE}} routine has been updated to re-optimise if such a situation is encountered: experimentation suggests that this can deliver much more reliable estimates, as measured by the calculated gradient of the (penalised) log-likelihood at the calculated optimum.}
   \item{Added \code{verbose} argument to \code{\link{dlm.SafeLL}} to help with debugging.}
   \item{Added trap to avoid infinite loop when adjusting hessian to ensure positive definiteness in \code{\link{dlm.SafeMLE}}.}
   \item{Added information / warning messages to help track progress in \code{\link{dlm.SafeMLE}} when \code{messages} is \code{TRUE} or at least 1.}
