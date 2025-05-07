@@ -26,20 +26,13 @@ Installation requires the `devtools` package in `R`. The instructions below assu
 
 # Installation
 
-If you have the `devtools` package installed in `R` then, from the `R` command line, the package can be installed using:
+You should install the corrected version of the `dlm` library (version 1.1-6.1 on CRAN at time of writing, renumbered here to start at version 1.1-600) **before** installing `TimSPEC`: some users have reported errors if the installation is done the other way round. To install the corrected `dlm`, in addition to `devtools` (see above) `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant [compilation tools](https://mac.r-project.org/tools/) are available, depending on their setup.
 
-```
-library(devtools)
-install_github("Richard-Chandler/TimSPEC")
-```
-
-To install the corrected version of the `dlm` library (version 1.1-6 on CRAN at time of writing, renumbered here to start at version 1.1-600), `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant [compilation tools](https://mac.r-project.org/tools/) are available, depending on their setup.
-
-Then:
+Then the two packages (`dlm` and `TimSPEC`) can be installed as follows
 
 ```
 library(devtools)
 install_github("Richard-Chandler/dlmPatched")
+install_github("Richard-Chandler/TimSPEC")
 ```
-
 If this succeeds, you are now ready to start. `help(SLLTSmooth)` may be a useful entry point. 
