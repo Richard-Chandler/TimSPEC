@@ -1,6 +1,16 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
+\section{Changes in version 0.2-0 (2025-11-27)}{
+The main change here is to the routines using the Kalman filter and smoother (including log-likelihood calculations), for which approximate centering is now used to improve the stability of the calculations. This also yields substantial improvements in terms of speed of model fitting, with some tweaks to the \code{\link[stats]{nlm}} options used in \code{\link{dlm.SafeMLE}}.
+  \itemize{
+  \item{Added \code{Shift} arguments to all \code{.modeldef} functions, and \code{Shift} attributes to their return values, to record the shifts that must be applied to state estimates fitted to data with a constant term subtracted e.g. for purposes of approximate centring.}
+  \item{Modified the examples for \code{\link{PostPredSample}}, to demonstrate how to handle situations where a posterior sample is found with a higher log-posterior than the previously-identified MAP estimate.}
+  \item{Removed the workaround function \code{EnsEBM2waytrend.NegLL}, which is no longer needed.}
+  \item{Added \code{print} methods for objects of class \code{dlmMLE} and their summaries.}
+  }
+}
+
 \section{Changes in version 0.1-0 (2024-08-03)}{
 There are some substantial changes in the optimisation algorithms used to find maximum \emph{a posterior} estimates in this version. The fitting routines are now slower than in previous versions, but more accurate. 
   \itemize{

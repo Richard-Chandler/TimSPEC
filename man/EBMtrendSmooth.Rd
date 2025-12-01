@@ -20,15 +20,15 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE,
   \item{theta}{Optional initial value for parameter vector. If \code{NULL}, the routine will auto-initialise the optimisation in the first step.}
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.} 
-  \item{debug}{As in \code{\link{dlmMLE}}.}
+  \item{debug}{As in \code{\link[dlm]{dlmMLE}}.}
   \item{...}{Other arguments to \code{\link{dlm.SafeMLE}}.}
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model. 
 }
 \value{A named list with three components:
-\item{Theta}{Object containing parameter estimation results; the result of a call to \code{\link{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
+\item{Theta}{Object containing parameter estimation results; the result of a call to \code{\link[dlm]{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
 \item{Model}{An object of class \code{dlm} containing the fitted model itself}
-\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
+\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link[dlm]{dlmSmooth}}}
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 

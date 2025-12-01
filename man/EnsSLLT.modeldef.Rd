@@ -4,9 +4,10 @@
 \title{Postprocessing an exchangeable ensemble of time series using smooth local linear trends}
 \description{Sets up the structure of a simple "Ensemble smooth local linear trend" state space time series model for an observed time series and exchangeable ensemble.}
 \usage{
-EnsSLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06, NRuns, 
-                 Groups = NULL, discrepancy = "varying", 
-                 UseAlpha = TRUE, constrain = TRUE)
+EnsSLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06, 
+                 Shift=0, NRuns, Groups = NULL, 
+                 discrepancy = "varying", UseAlpha = TRUE, 
+                 constrain = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -14,6 +15,7 @@ EnsSLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06, NRuns,
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Initialisation variance for diffuse elements of the state vector. Ignored if \code{C0} is non-\code{NULL}.}
+  \item{Shift}{Fits and smooths can be done on data \code{Y-Shift} to improve numerical stability: often, \code{Shift} will be the sample mean of the observations, as is done automatically in the \code{\link{EnsSLLTSmooth}} function. The model structure returned is for the shifted data, but with a \code{Shift} attribute containing the vector that must be added to the \code{m0} component and any state estimates to get back to the original scale.}
   \item{NRuns}{Number of ensemble members}
   \item{Groups}{Vector indicating group membership for each ensemble member. This should be used if an ensemble contains multiple runs from one or more simulators (climate models): in this case the elements of \code{Groups} should be integers between 1 and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL} (the default), each member is assumed to come from a different simulator. 
 }
@@ -53,7 +55,7 @@ where \eqn{G} is the number of simulators contributing to the ensemble (see docu
 
 
 }
-\value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.}
+\value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library and with an additional \code{Shift} attribute, which is a vector containing the quantities to be added back repsectively to any state vector or initial value to recover the model definition for data on the original scale.}
 
 \note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
 

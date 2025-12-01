@@ -30,7 +30,7 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
   \item{WhichEls}{Numeric vector choosing the series (i.e. columns of \code{Data}) for which sampling is required. The default value of 1 selects just the real-world series. }
   \item{NonNeg}{If \code{TRUE}, the sampled "observations" will be drawn from gamma distributions with mean and variance matching those from the posterior predictive distribution --- this ensures that the results are all strictly positive. If \code{FALSE} (the default), they will be drawn from normal distributions. }
   \item{ReplaceAll}{If \code{TRUE}, the returned object will contain random samples for all time points. If \code{FALSE} (the default), only the values missing from \code{Data} are simulated (and the non-missing values are included in the output). }
-  \item{debug}{As in \code{\link{dlmLL}}. }
+  \item{debug}{As in \code{\link[dlm]{dlmLL}}. }
   \item{messages}{Logical scalar, controlling whether to print progress to screen.}
   \item{\dots}{Additional arguments to \code{build}. }
 }
@@ -58,7 +58,8 @@ example(EBMtrendSmooth)
 
 ## Now draw approximate posterior predictive samples from the created object
 ## (which is named EBMFit) using Laplace approximation (i.e. not using 
-## importance sampling)
+## importance sampling). Set seed for reproducible results.
+set.seed(2000)
 PPSApprox <- 
     PostPredSample(as.matrix(GlobalTemps585$Obs), ModelBundle=EBMFit, 
                  Build=EBMtrend.modeldef, N=250, m0=m0, kappa=k,
@@ -79,8 +80,18 @@ PPS <-
 ##  Using BestID attribute to check that there are no better parameter sets
 ##  than the one in EBMFit
 BestID <- attr(PPS$Thetas, "BestID")
-cat("Do any sampled parameter sets have a higher log-posterior than EBMFit? ",
-    if(is.null(BestID)) "No" else "Yes: set ",BestID,"\n") 	
+cat("Check for sampled parameter sets with higher log-posterior than EBMFit ... ")
+if(is.null(BestID)) cat("None found") else {
+  cat("\nSet ",BestID,"has a higher log-posterior - refitting ...\n")
+  EBMFit <- EBMtrendSmooth(GlobalTemps585$Obs, Xt=ERF585$NetERF,
+                         kappa=k, UsePhi=TRUE, prior.pars=priors,
+                         theta=PPS$Thetas[BestID,])
+  
+  PPS <- 
+    PostPredSample(as.matrix(GlobalTemps585$Obs), ModelBundle=EBMFit, 
+                 Importance=TRUE, CheckMax=TRUE, Build=EBMtrend.modeldef, 
+				 N=250, m0=m0, kappa=k, Xt=ERF585$NetERF)
+}
 
 SmoothPlot(GlobalTemps585[,1:2], Samples=PPS, 
            DatColours=c("black", NA), PredColours=c("darkblue", NA), 

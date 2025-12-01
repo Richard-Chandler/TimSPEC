@@ -7,7 +7,7 @@
 dlm.ObsPred(ModelBundle)
 }
 \arguments{
-  \item{ModelBundle}{A list containing at least the named components \code{Model} (an object of class \code{dlm}) and \code{Smooth} (the result of Kalman Smoothing a dataset using the dlm stored in \code{Model}, via the \code{\link{dlmSmooth}} command). It is assumed that the model is set up in such a way that the "real world" value is the first element of each observation vector.}
+  \item{ModelBundle}{A list containing at least the named components \code{Model} (an object of class \code{dlm}) and \code{Smooth} (the result of Kalman Smoothing a dataset using the dlm stored in \code{Model}, via the \code{\link[dlm]{dlmSmooth}} command). It is assumed that the model is set up in such a way that the "real world" value is the first element of each observation vector.}
 }
 \value{The routine returns a list containing the predictions and their standard errors, each returned as a matrix in which the rows represent time points and columns represent series.
 }

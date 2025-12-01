@@ -3,8 +3,8 @@
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{"Safe" computation of a (penalised) log-likelihood for a dynamic linear model. 
 }
-\description{This is a wrapper for the \code{\link{dlmLL}} routine in the \pkg{dlm} 
-library. It (a) handles situations where \code{\link{dlmLL}} returns an error or an infinite  value (b) is designed for use in calls to \code{\link{nlm}} rather than \code{\link{optim}} when estimating parameters (c) allows for maximisation of a \emph{penalised} likelihood which can be regarded as an approximation to a Bayesian posterior.
+\description{This is a wrapper for the \code{\link[dlm]{dlmLL}} routine in the \pkg{dlm} 
+library. It (a) handles situations where \code{\link[dlm]{dlmLL}} returns an error or an infinite  value (b) is designed for use in calls to \code{\link{nlm}} rather than \code{\link{optim}} when estimating parameters (c) allows for maximisation of a \emph{penalised} likelihood which can be regarded as an approximation to a Bayesian posterior.
 }
 \usage{
 dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12, 
@@ -19,18 +19,18 @@ dlm.SafeLL(theta, Y, build, prior.pars = NULL, BigVal = 1e+12,
   
   If \code{NULL} (the default), no prior information is used. 
 }
-  \item{BigVal}{Value to return in case \code{\link{dlmLL}} fails. This should be larger than any reasonably expected value of the negative (penalised) log-likelihood, but not so large as to cause numerical instability when evaluating gradients etc.
+  \item{BigVal}{Value to return in case \code{\link[dlm]{dlmLL}} fails. This should be larger than any reasonably expected value of the negative (penalised) log-likelihood, but not so large as to cause numerical instability when evaluating gradients etc.
 }
-  \item{debug}{As in \code{\link{dlmLL}}
+  \item{debug}{As in \code{\link[dlm]{dlmLL}}
 }
   \item{verbose}{Logical scalar. If \code{TRUE}, the value of \code{theta} will be printed along with the computed (penalised) log-likelihood. This is useful for debugging when the function is wrapped in calls to other routines such as \code{\link[stats]{nlm}}.
 }
   \item{\dots}{Other arguments to \code{build}}
 }
-\value{If \code{prior.pars} is \code{NULL} then the function returns the result of \code{\link{dlmLL}} when that routine returns a finite number, otherwise it returns \code{BigVal}. If \code{prior.pars} is non-null, the function returns the negative log posterior (or penalised negative log-likelihood if you prefer) when \code{\link{dlmLL}} returns a finite number. In this case the result also has an "\code{Unpenalised}" attribute containing the unpenalised negative log-likelihood: this can be helpful for comparing (informally) fits of models with different parameters & hence different priors. 
+\value{If \code{prior.pars} is \code{NULL} then the function returns the result of \code{\link[dlm]{dlmLL}} when that routine returns a finite number, otherwise it returns \code{BigVal}. If \code{prior.pars} is non-null, the function returns the negative log posterior (or penalised negative log-likelihood if you prefer) when \code{\link[dlm]{dlmLL}} returns a finite number. In this case the result also has an "\code{Unpenalised}" attribute containing the unpenalised negative log-likelihood: this can be helpful for comparing (informally) fits of models with different parameters & hence different priors. 
 }
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>
 }
 
-\seealso{\code{\link{dlmLL}}, \code{\link{dlm.SafeMLE}}
+\seealso{\code{\link[dlm]{dlmLL}}, \code{\link{dlm.SafeMLE}}
 }

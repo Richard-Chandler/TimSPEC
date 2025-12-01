@@ -2,7 +2,7 @@
 \alias{SampleStates}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{Sampling from posterior distribution of state vector}
-\description{To sample from the posterior distribution of the state vector for a dynamic linear model. This is essentially a wrapper for \code{\link{dlmBSample}}. }
+\description{To sample from the posterior distribution of the state vector for a dynamic linear model. This is essentially a wrapper for \code{\link[dlm]{dlmBSample}}. }
 \usage{
 SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE, 
              messages = FALSE, ...)
@@ -13,7 +13,7 @@ SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE,
   \item{build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \code{TimSPEC} package. }
     \item{Y}{The data: a matrix containing a column for each time series, in the form anticipated by the model constructed by \code{build}. This is used to calculate the exact log-posterior for each row of \code{Thetas}. }
   \item{NonNeg}{An optional vector containing indices of state elements that should not be negative (e.g. when analysing untransformed precipitation series). }
-  \item{debug}{As in \code{\link{dlmLL}}. }
+  \item{debug}{As in \code{\link[dlm]{dlmLL}}. }
   \item{messages}{Controls whether to print progress to screen. }
   \item{\dots}{Additional arguments to \code{build}. }
 }

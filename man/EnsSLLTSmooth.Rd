@@ -32,9 +32,9 @@ EnsSLLTSmooth(Y, m0 = NULL, C0=NULL, kappa = 1e+06, discrepancy = "varying",
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model.}
 \value{A named list with three components:
-\item{Theta}{Object containing parameter estimation results; the result of a call to \code{\link{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
+\item{Theta}{Object containing parameter estimation results; the result of a call to \code{\link[dlm]{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
 \item{Model}{An object of class \code{dlm} containing the fitted model itself}
-\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
+\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link[dlm]{dlmSmooth}}}
 }
 
 \note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
