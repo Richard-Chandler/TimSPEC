@@ -5,7 +5,7 @@
 \description{Sets up the structure of a "smooth local linear trend" state space
 model for a single time series.}
 \usage{
-SLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06)
+SLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06, Shift=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -13,6 +13,7 @@ SLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06)
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Initialisation variance for diffuse elements of the state vector. Ignored if \code{C0} is non-\code{NULL}.}
+  \item{Shift}{Fits and smooths can be done on data \code{Y-Shift} to improve numerical stability: often, \code{Shift} will be the sample mean of the observations, as is done automatically in the \code{\link{SLLTSmooth}} function. The model structure returned is for the shifted data, but with a \code{Shift} attribute containing the vector that must be added to the \code{m0} component and any state estimates to get back to the original scale.}
 }
 \details{The model is defined by the equations
 \deqn{Y(t) = \mu(t) + \varepsilon(t)}{Y(t) = mu[t] + e[t]}
@@ -27,7 +28,8 @@ At time \eqn{t}, the state vector for the model is defined as
 }
 
 
-\value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.}
+\value{A list defining a dynamical linear model for shifted data, in the format required by routines in the \pkg{dlm} library and with an additional \code{Shift} attribute, which is a vector containing the quantities to be added back repsectively to any state vector or initial value to recover the model definition for data on the original scale.}
+
 \references{Chandler, R. E. and Scott, E. M. (2011). \emph{Statistical methods for trend detection and analysis in the environmental sciences}, Section 5.5. John Wiley & Sons, Chichester.}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{SLLTSmooth}} for a convenience wrapper function; \code{\link{EnsSLLT.modeldef}} for an extension to climate model ensembles; \code{\link{EBMtrend.modeldef}}, for a physically motivated alternative for application to climate time series.}

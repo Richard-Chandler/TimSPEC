@@ -16,7 +16,7 @@ dlm.ImportanceWts(samples, build, Y, prior.pars = NULL, debug = FALSE, ...)
 }
   \item{prior.pars}{As in \code{\link{dlm.SafeLL}}
 }
-  \item{debug}{As in \code{\link{dlmLL}}
+  \item{debug}{As in \code{\link[dlm]{dlmLL}}
 }
   \item{\dots}{Other arguments to \code{build}}
 }

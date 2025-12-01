@@ -3,15 +3,16 @@ export("covxfrm", "num.deriv", "num.hess",
        "dlm.ObsPred", "dlm.SafeLL", "dlm.SafeMLE", "dlm.ThetaSample",
        "dmvnorm.SpD", "dmvt.SpD", "EBMtrend.modeldef",
        "EBMtrendSmooth", "EnsEBM2waytrend.modeldef",
-       "EnsEBM2waytrend.NegLL", "EnsEBM2waytrendSmooth",
-       "EnsEBMtrend.modeldef", "EnsEBMtrendSmooth", "EnsMean",
-       "EnsSLLT.modeldef", "EnsSLLTSmooth", "ExamineFailures",
-       "GraphAnnot", "make.SSinits", "PlotImportanceWts",
-       "PlotEnsTS", "PostPred.VidFrames", "PostPredSample",
-       "SampleObs", "SampleStates", "SLLT.IniPar", "SLLT.modeldef",
-       "SLLTSmooth", "SmoothPlot", "summary.dlmMLE", "which.diffuse")
+       "EnsEBM2waytrendSmooth", "EnsEBMtrend.modeldef", 
+	   "EnsEBMtrendSmooth", "EnsMean", "EnsSLLT.modeldef", 
+	   "EnsSLLTSmooth", "ExamineFailures","GraphAnnot", "make.SSinits", 
+	   "PlotImportanceWts", "PlotEnsTS", "PostPred.VidFrames", 
+	   "PostPredSample", "print.dlmMLE", print.summary.dlmMLE, 
+	   "SampleObs", "SampleStates", "SLLT.IniPar", "SLLT.modeldef", 
+	   "SLLTSmooth", "SmoothPlot", "summary.dlmMLE", "which.diffuse")
 import(dlm, magick)
 importFrom("stats", "lm")
+importFrom("utils", "str")
 importFrom(Hmisc, "wtd.quantile")
 importFrom("grDevices", "col2rgb", "dev.off", "grey", "hcl.colors", "png", "rgb")
 importFrom("graphics", "abline", "legend", "lines", "matlines", "matplot", "mtext", 
@@ -20,4 +21,6 @@ importFrom("stats", "acf", "arima", "coef", "contrasts<-", "cov2cor", "dnorm", "
  		"median", "model.matrix", "na.pass", "nlm", "pchisq", "pnorm", "ppoints",
  		"qchisq", "qgamma", "quantile", "rchisq", "rnorm", "stepfun", "var",
  		"weighted.mean")
+S3method(print, dlmMLE)
 S3method(summary, dlmMLE)
+S3method(print, summary.dlmMLE)

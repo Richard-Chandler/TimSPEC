@@ -26,14 +26,14 @@ EnsEBMtrendSmooth(Y, Xt, Groups = NULL, m0 = NULL, C0=NULL, kappa = 1e+06,
   \item{constrain}{Logical scalar controlling whether to impose sum-to-zero constraints across the ensemble members where necessary to make the model identifiable.}
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
-  \item{debug}{As in \code{\link{dlmMLE}}.}
+  \item{debug}{As in \code{\link[dlm]{dlmMLE}}.}
   \item{...}{Other arguments to \code{\link{dlm.SafeMLE}}.}
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model.}
 \value{A named list with three components:
-\item{Theta}{Object containing parameter estimation results; the result of a call to \code{\link{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
+\item{Theta}{Object containing parameter estimation results; the result of a call to \code{\link[dlm]{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
 \item{Model}{An object of class \code{dlm} containing the fitted model itself}
-\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
+\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link[dlm]{dlmSmooth}}}
 }
 
 \note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
@@ -64,15 +64,15 @@ m0[1] <- 14  # Prior expectation of global mean temperature in 1949
 k <- 25
 
 ## Fit and smooth the observations (this could take a few minutes,
-## so set messages to TRUE to track progress)
+## so set messages to TRUE to track progress - this will also 
+## print a summary of the fitted mimic at the end)
 EnsEBMFit <- 
   EnsEBMtrendSmooth(as.matrix(GlobalTemps585[,-1]), Xt=ERF585$NetERF,
                               Groups=as.numeric(as.factor(GCMIDs)), 
                               m0=m0, kappa=k, prior.pars=priors,
                               messages=TRUE)
                             
-## Examine fitted mimic, and plot
-summary(EnsEBMFit$Theta)
+## Plot the fitted mimic
 SmoothPlot(GlobalTemps585, EnsEBMFit, DatColours=c("black", "coral3"),
            Groups=as.numeric(as.factor(GCMIDs)), 
            PredColours=c("darkblue", "darkgoldenrod"), PlotConsensus=TRUE, 

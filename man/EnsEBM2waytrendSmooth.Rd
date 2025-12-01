@@ -1,6 +1,5 @@
 \name{EnsEBM2waytrendSmooth}
 \alias{EnsEBM2waytrendSmooth}
-\alias{EnsEBM2waytrend.NegLL}
 \title{Postprocessing an two-way structured ensemble of time series using EBM-inspired dynamic linear models}
 \description{Fits a model of the form defined by \code{\link{EnsEBM2waytrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals. The motivating application is for a regional ensemble in which each member has been produced by running one of a collection of regional climate models (RCMs), with boundary conditions generated using one of a collection of global climate models (GCMs): the documentation below is framed in the context of such an application. }
 \usage{
@@ -25,14 +24,14 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups,
   \item{constrain}{Logical scalar, controlling whether or not to ensure identifiability by imposing sum-to-zero constraints on relevant RCM-specific and GCM-specific effects.}
   \item{messages}{Controls whether to print progress to screen. For details, see the help for \code{\link{dlm.SafeMLE}}.}
   \item{Use.dlm}{Logical scalar, used to control the method used to fit the model: see \code{\link{dlm.SafeMLE}}.}
-  \item{debug}{As in \code{\link{dlmMLE}}.}
+  \item{debug}{As in \code{\link[dlm]{dlmMLE}}.}
   \item{...}{Other arguments to \code{\link{dlm.SafeMLE}}.}
 }
 
 \value{A named list with three components:
-\item{Theta}{Object containing parameter estimation results; the structure is the same as that arising from a call to \code{\link{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
+\item{Theta}{Object containing parameter estimation results; the structure is the same as that arising from a call to \code{\link[dlm]{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
 \item{Model}{An object of class \code{dlm} containing the fitted model itself}
-\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link{dlmSmooth}}}
+\item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link[dlm]{dlmSmooth}}}
 }
 
 \note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}

@@ -4,9 +4,9 @@
 \title{State space model for an exchangeable ensemble of time series, inspired by Energy Balance Models}
 \description{Sets up the structure of a state space model for an observed time series and exchangeable ensemble, with trend formulation inspired by the form of a simple energy balance model (EBM).}
 \usage{
-EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6, NRuns, 
-                     Groups = NULL, UseAlpha = TRUE, UsePhi = TRUE, 
-                     constrain = TRUE)
+EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6, 
+                     Shift=0, NRuns, Groups = NULL, UseAlpha = TRUE, 
+                     UsePhi = TRUE, constrain = TRUE)
 }
 \arguments{
   \item{theta}{Parameter vector. See "Details".}
@@ -14,6 +14,7 @@ EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6, NRuns,
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{"Large" value with which to initialise variances of diffuse components of state vector at time 0. Ignored if \code{C0} is non-\code{NULL}.}
+  \item{Shift}{Fits and smooths can be done on data \code{Y-Shift} to improve numerical stability: often, \code{Shift} will be the sample mean of the observations, as is done automatically in the \code{\link{EnsEBMtrendSmooth}} function. The model structure returned is for the shifted data, but with a \code{Shift} attribute containing the vector that must be added to the \code{m0} component and any state estimates to get back to the original scale.}
   \item{NRuns}{Number of ensemble members}
   \item{Groups}{Vector of length \code{NRuns}, indicating group membership. This should be used if an ensemble contains multiple runs from one or more simulators (i.e. climate models): in this case the elements of \code{Groups} should be integers between \code{1} and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL}, each member is assumed to come from a different simulator.}
   \item{UseAlpha}{See "Details" section}
@@ -52,7 +53,7 @@ When \code{constrain} is \code{FALSE}, the state vector for the model at time \e
 where \eqn{G} is the number of simulators contributing to the ensemble (see documentation for the \code{Groups} argument above). When \code{constrain} is \code{TRUE} (the default), the elements corresponding to simulator \eqn{G} are removed: in this case they are defined in terms of the other elements by the sum-to-zero constraint. 
 }
 
-\value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.}
+\value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library and with an additional \code{Shift} attribute, which is a vector containing the quantities to be added back repsectively to any state vector or initial value to recover the model definition for data on the original scale.}
 \references{
 REFERENCES TO BE ADDED
 }

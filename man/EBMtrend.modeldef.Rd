@@ -4,7 +4,8 @@
 \title{State space model for a single time series, inspired by Energy Balance Models}
 \description{Sets up the structure of a state space model for a single time series with one value per year, inspired by the structure of a simple energy balance model (EBM)}
 \usage{
-EBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE)
+EBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, 
+                  Shift=0, UsePhi = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -13,6 +14,7 @@ EBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE)
   \item{m0}{Optional vector of initial values for the state vector. If \code{NULL} (the default) this is determined automatically from the model structure.}
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{"Large" value giving the variance used to initialise diffuse elements of the state vector. Ignored if \code{C0} is non-\code{NULL}.}
+  \item{Shift}{Fits and smooths can be done on data \code{Y-Shift} to improve numerical stability: often, \code{Shift} will be the sample mean of the observations, as is done automatically in the \code{\link{EBMtrendSmooth}} function. The model structure returned is for the shifted data, but with a \code{Shift} attribute containing the vector that must be added to the \code{m0} component and any state estimates to get back to the original scale.}
   \item{UsePhi}{Controls whether or not to include a thermal inertia parameter in the model structure.}
 }
 \details{The model is defined by the equation
@@ -29,8 +31,7 @@ At time \eqn{t}, the state vector for the model is defined as
 
 }
 
-\value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library.
-}
+\value{A list defining a dynamical linear model, in the format required by routines in the \pkg{dlm} library and with an additional \code{Shift} attribute, which is a vector containing the quantities to be added back repsectively to any state vector or initial value to recover the model definition for data on the original scale.}
 \references{
 REFERENCES TO BE ADDED
 }
