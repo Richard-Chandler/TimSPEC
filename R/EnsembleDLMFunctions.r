@@ -1944,7 +1944,11 @@ SampleStates <- function(Thetas, build, Y, NonNeg=NULL,
           res[i,,] <- Sample[-1,] # First row is "time zero"
           if (!isTRUE(all(abs(Sample[-1,])<1e12))) FailedIDs <- c(FailedIDs, i) # Check for exploding values & NAs
           NegIDs <- apply(Sample, MARGIN=2, FUN=function(x) any(x <= 0))
-          if (!isTRUE(NonNeg) | !isTRUE(any(NegIDs[NonNeg]))) {
+          # 
+          # Next line: NonNeg is either NULL (no non-negative requirement)
+          # or a vector picking out elements that should be non-negative.
+          #
+          if (is.null(NonNeg) | !isTRUE(any(NegIDs[NonNeg]))) { # 
             NegOK <- TRUE
           } else {
             if (!NegWarned) warning("Negative states have been generated: retrying ...")
