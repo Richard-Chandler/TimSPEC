@@ -4,9 +4,10 @@
 \description{Fits a model of the form defined by \code{\link{EnsEBM2waytrend.modeldef}}, then applies the Kalman Smoother to obtain an estimate of the underlying trends with prediction intervals. The motivating application is for a regional ensemble in which each member has been produced by running one of a collection of regional climate models (RCMs), with boundary conditions generated using one of a collection of global climate models (GCMs): the documentation below is framed in the context of such an application. }
 \usage{
 EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups, 
-                      prior.pars = NULL, theta=NULL, interactions = "none", 
-                      UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE,
-                      messages = TRUE, Use.dlm = FALSE, debug = FALSE, ...)
+                      compact=TRUE, prior.pars = NULL, theta=NULL,
+                      interactions = "none", UseAlpha = TRUE, UsePhi = TRUE,
+                      constrain = TRUE, messages = TRUE, Use.dlm = FALSE,
+                      debug = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -16,6 +17,7 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups,
 \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
 \item{kappa}{Variance used to initialise diffuse elements of the state vector.}
   \item{Groups}{Two-column matrix such that \code{Groups[i,1]} is the number of the RCM used to produce the \eqn{i}th ensemble member (i.e. column \code{i+1} of \code{Y}) and \code{Groups[i,2]} is the number of the GCM.}
+  \item{compact}{Logical scalar indicating whether to compact the ensemble using \code{\link{CompactEns}} before fitting. For ensembles with many members per simulator combination, this may speed up the fitting without sacrificing information because the combination-specific means are sufficient statistics. Defaults to \code{TRUE}.}
   \item{prior.pars}{Optional 2-column matrix containing the means and standard deviations of independent Gaussian priors for the transformed model parameters (log variances, and logit thermal inertias). If this is provided, maximum \emph{a posteriori} (or penalised maximum likelihood) estimation is used; otherwise just standard maximum likelihood.}
   \item{theta}{Optional initial value for parameter vector. If \code{NULL}, the routine will auto-initialise the optimisation in the first step.}
   \item{interactions}{Character scalar, indicating which RCM:GCM "interaction" terms to include in the state vector. Options are \code{"none"} to exclude them completely, \code{"all"} to include all of them and \code{"available"} to include just those for which thecorresponding RCM:GCM combinations appear in \code{Groups}. Default is \code{"none"}, because the interaction terms substantially increase the dimension and are therefore likely to slow things down considerably.}
@@ -28,13 +30,16 @@ EnsEBM2waytrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, Groups,
   \item{...}{Other arguments to \code{\link{dlm.SafeMLE}}.}
 }
 
-\value{A named list with three components:
+\value{A named list with four components:
+\item{Data}{List containing components \code{Y} (the data used to produce the smooths, perhaps after compacting the ensemble according to the value of \code{compact}) and \code{Groups} (the supplied argument, possibly modified as appropriate if \code{compact} is \code{TRUE}. The \code{Y} component has a \code{RunsPerTS} attribute if \code{compact} is \code{TRUE} - see \code{\link{CompactEns}}.}
 \item{Theta}{Object containing parameter estimation results; the structure is the same as that arising from a call to \code{\link[dlm]{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
 \item{Model}{An object of class \code{dlm} containing the fitted model itself}
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link[dlm]{dlmSmooth}}}
 }
 
-\note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.}
+\note{If \code{m0} and / or \code{C0} are provided and \code{constrain} is \code{TRUE}, no check is done to ensure that the provided values are consistent with the specified constraints. This should not be too problematic in most cases, but users should be aware of it.
+
+Note also that the parameter estimates, smooths and uncertainty estimates should be identical (up to the accuracy of the numerical algorithms) regardless of the value of \code{compact}. The reported log-likelihoods will potentially differ however, because of differences in the constant terms used in the definitions of multivariate normal densities in different dimensions.}
 
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 \seealso{\code{\link{EnsEBM2waytrend.modeldef}}, \code{\link{EBMtrendSmooth}}, \code{\link{EnsEBMtrendSmooth}}, \code{\link{dlm.SafeMLE}}, \code{\link{summary.dlmMLE}}}

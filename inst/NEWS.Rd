@@ -1,6 +1,19 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
+\section{Changes in version 0.2-1 (2025-12-20)}{
+  \itemize{
+  \item{Renamed the \code{NRuns} arguments in \code{\link{EnsEBMtrend.modeldef}} and \code{\link{EnsSLLT.modeldef}} to \code{NEnsTS} `number of time series from the ensemble', and added an optional \code{RunsPerTS} argument to allow for data reduction by (e.g.) averaging independent ensemble members from the same simulator. A \code{RunsPerTS} argument has also been added to \code{\link{EnsEBM2waytrend.modeldef}}.}
+  \item{Added routine \code{\link{CompactEns}} to average ensemble members from the same source.}
+  \item{Added a \code{Data} element to the return value of \code{\link{EnsSLLTSmooth}}, \code{\link{EnsEBMtrendSmooth}} and \code{\link{EnsEBM2waytrendSmooth}}, containing the data structure that was actually used (e.g. after compacting the supplied data depending on the value of the \code{compact} argument to these routines.)}
+  \item{Reorganised some of the code for calculating ensemble means and imputing missing values.}
+  \item{Changed the default imputation method in \code{\link{EnsImpute}}.}
+  \item{Changed the default initial values for numerical optimisation of the log posterior / likelihood in \code{\link{EnsSLLTSmooth}}.}
+  \item{Added checks for time points with partially missing ensemble information in the \code{Ens...Smooth} routines, because these can cause some of the \code{dlm} library routines to fail (possibly in cases where the missing values are correlated with some of the non-missing values).}
+  \item{Merged the help pages for \code{\link{EnsEBMtrendSmooth}} and \code{\link{EnsSLLTSmooth}}.}
+  }
+}
+
 \section{Changes in version 0.2-0 (2025-11-27)}{
 The main change here is to the routines using the Kalman filter and smoother (including log-likelihood calculations), for which approximate centering is now used to improve the stability of the calculations. This also yields substantial improvements in terms of speed of model fitting, with some tweaks to the \code{\link[stats]{nlm}} options used in \code{\link{dlm.SafeMLE}}.
   \itemize{

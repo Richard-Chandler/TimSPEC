@@ -5,8 +5,8 @@
 \description{Sets up the structure of a state space model for an observed time series and exchangeable ensemble, with trend formulation inspired by the form of a simple energy balance model (EBM).}
 \usage{
 EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6, 
-                     Shift=0, NRuns, Groups = NULL, UseAlpha = TRUE, 
-                     UsePhi = TRUE, constrain = TRUE)
+                     Shift=0, NEnsTS, Groups = NULL, RunsPerTS=NULL,
+                     UseAlpha = TRUE, UsePhi = TRUE, constrain = TRUE)
 }
 \arguments{
   \item{theta}{Parameter vector. See "Details".}
@@ -15,8 +15,9 @@ EnsEBMtrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6,
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{"Large" value with which to initialise variances of diffuse components of state vector at time 0. Ignored if \code{C0} is non-\code{NULL}.}
   \item{Shift}{Fits and smooths can be done on data \code{Y-Shift} to improve numerical stability: often, \code{Shift} will be the sample mean of the observations, as is done automatically in the \code{\link{EnsEBMtrendSmooth}} function. The model structure returned is for the shifted data, but with a \code{Shift} attribute containing the vector that must be added to the \code{m0} component and any state estimates to get back to the original scale.}
-  \item{NRuns}{Number of ensemble members}
-  \item{Groups}{Vector of length \code{NRuns}, indicating group membership. This should be used if an ensemble contains multiple runs from one or more simulators (i.e. climate models): in this case the elements of \code{Groups} should be integers between \code{1} and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL}, each member is assumed to come from a different simulator.}
+  \item{NEnsTS}{Number of time series coming from the ensemble. This will often be the number of ensemble members, but it's possible that some series have been averaged over some subsets of the members: see the \code{NRuns} argument.}
+  \item{Groups}{Vector of length \code{NEnsTS}, indicating group membership. This should be used if an ensemble contains multiple runs from one or more simulators (i.e. climate models): in this case the elements of \code{Groups} should be integers between \code{1} and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL}, each member is assumed to come from a different simulator.}
+  \item{RunsPerTS}{Optional vector, of length \code{NEnsTS}. If present, the \eqn{i}th series from the ensemble is interpreted as a mean of \code{RunsPerTS[i]} independent ensemble members e.g. produced from the corresponding simulator under different initial conditions.}
   \item{UseAlpha}{See "Details" section}
   \item{UsePhi}{Controls whether or not to include thermal inertia parameters in the model structure.}
   \item{constrain}{Logical scalar indicating whether or not to constrain the discrepancy trends and slopes for the individual ensemble members to sum to zero. Without this constraint, the model is formally not identifiable --- although linear combinations of elements of the state vector are.}
