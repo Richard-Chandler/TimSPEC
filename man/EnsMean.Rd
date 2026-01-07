@@ -20,17 +20,7 @@ EnsMean(Data, Groups=NULL, na.option=NULL)
 
 \details{If \code{Groups} is \code{NULL} (the default) then this function computes the overall mean of the ensemble members (subject to the treatment of missing values according to the value of \code{na.option}). Otherwise, the result is formed from the intercepts in ANOVA models fitted separately to the ensemble members at each time point, with factors defined by the column(s) of \code{EnsStruct} and using sum-to-zero constraints: in this case, the result can be interpreted as a mean of the simulators or simulator combinations.
 
-If \code{na.option} is \code{"na.rm"} then the missing value patterns are processed separately at each time point. This can lead to discontinuities in the calculated ensemble mean series if the ensemble members cover different periods, especially in structured ensembles where one simulator has been run for a slightly different time period from the remainder. In this case, the \code{"na.impute"} option may be preferable. With this option, means are computed after imputing any missing values using an additive ANOVA model with effects corresponding to ensemble member and to the time variable (treated as a factor). Denoting by \eqn{Y_{it}}{Y[it]} the value for ensemble member \eqn{i} at time \eqn{t}, in a complete ensemble with no missing values the corresponding fitted value is estimated as 
-
-\deqn{\overline{Y}_{\cdot\cdot} + 
-\left(\overline{Y}_{i\cdot}-\overline{Y}_{\cdot\cdot}\right) + 
-\left(\overline{Y}_{\cdot t}-\overline{Y}_{\cdot\cdot}\right) = \overline{Y}_{i\cdot} + 
-\left(\overline{Y}_{\cdot t}-\overline{Y}_{\cdot\cdot}\right)}{%
-Ybar[..] + (Ybar[i.]-Ybar[..]) + (Ybar[.t]-Ybar[..]) = Ybar[i.] + 
-(Ybar[.j]-Ybar[..])
-}
-
-in standard ANOVA notation. In the present case, the \eqn{\{\overline{Y}_{i\cdot}\}}{{Ybar[i.]}} are estimated as the sample means of the available values for ensemble member \eqn{i}; and the temporal residuals \eqn{\{\overline{Y}_{\cdot t}-\overline{Y}_{\cdot\cdot}\}}{{Ybar[.t]-Ybar[..]}} are estimated from the set of ensemble members with complete records.
+If \code{na.option} is \code{"na.rm"} then the missing value patterns are processed separately at each time point. This can lead to discontinuities in the calculated ensemble mean series if the ensemble members cover different periods, especially in structured ensembles where one simulator has been run for a slightly different time period from the remainder. In this case, the \code{"na.impute"} option may be preferable. With this option, means are computed after imputing any missing values using an additive ANOVA model with effects corresponding to ensemble member and to the time variable (treated as a factor). For details, see the help for \code{\link{EnsImpute}}.
 }
 
 \value{A vector containing the computed series.}

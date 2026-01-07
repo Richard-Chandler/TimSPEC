@@ -25,7 +25,8 @@ EBMtrendSmooth(Y, Xt, m0 = NULL, C0=NULL, kappa = 1e+06, UsePhi = TRUE,
 }
 \details{The function is a wrapper for the steps required to fit and apply a dynamic linear model. It starts by trying to find reasonable values for (penalised) maximum likelihood estimation of the model parameters; then carries out the estimation; and finally applies the Kalman Smoother to the data using the fitted model. 
 }
-\value{A named list with three components:
+\value{A named list with four components:
+\item{Data}{List containing a single component \code{Y} (the data used to produce the smooths). This is included only for compatibility with the routines used to process ensembles.}
 \item{Theta}{Object containing parameter estimation results; the result of a call to \code{\link[dlm]{dlmMLE}} or \code{\link{dlm.SafeMLE}}}
 \item{Model}{An object of class \code{dlm} containing the fitted model itself}
 \item{Smooth}{An object containing the result of Kalman Smoothing the input series using the fitted model. This is produced using \code{\link[dlm]{dlmSmooth}}}
@@ -54,10 +55,4 @@ EBMFit <- EBMtrendSmooth(GlobalTemps585$Obs, Xt=ERF585$NetERF,
                          kappa=k, UsePhi=TRUE, prior.pars=priors)
 SmoothPlot(GlobalTemps585[,1:2], EBMFit, DatColours=c("black", NA),
            PredColours=c("darkblue", NA), ylim=c(13.5,18))
-
-## Here's a plot of the smooth with the ensemble members as well
-SmoothPlot(GlobalTemps585, EBMFit, DatColours=c("black", "coral3"),
-           PredColours=c("darkblue", NA), EnsTransp=0.3)
-
-
 }

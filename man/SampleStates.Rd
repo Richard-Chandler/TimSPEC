@@ -15,7 +15,7 @@ SampleStates(Thetas, build, Y, NonNeg = NULL, debug = FALSE,
   \item{NonNeg}{An optional vector containing indices of state elements that should not be negative (e.g. when analysing untransformed precipitation series). }
   \item{debug}{As in \code{\link[dlm]{dlmLL}}. }
   \item{messages}{Controls whether to print progress to screen. }
-  \item{\dots}{Additional arguments to \code{build}. }
+  \item{\dots}{Additional arguments to \code{build}. Note, however, that if \code{build} has a \code{RunsPerTS} argument then the routine will take this from the \code{RunsPerTS} attribute of \code{Y} if present e.g. arising from a call to \code{\link{CompactEns}}: in this case therefore, the user should not supply this argument separately.}
 }
 \details{Most users won't need to call this function: use \code{\link{PostPredSample}} instead, which is a wrapper to all of the function calls needed to produce a posterior predictive sample. }
 

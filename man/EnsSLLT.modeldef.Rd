@@ -5,7 +5,7 @@
 \description{Sets up the structure of a simple "Ensemble smooth local linear trend" state space time series model for an observed time series and exchangeable ensemble.}
 \usage{
 EnsSLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06, 
-                 Shift=0, NRuns, Groups = NULL, 
+                 Shift=0, NEnsTS, Groups = NULL, RunsPerTS=NULL,
                  discrepancy = "varying", UseAlpha = TRUE, 
                  constrain = TRUE)
 }
@@ -16,9 +16,10 @@ EnsSLLT.modeldef(theta, m0 = NULL, C0=NULL, kappa = 1e+06,
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{Initialisation variance for diffuse elements of the state vector. Ignored if \code{C0} is non-\code{NULL}.}
   \item{Shift}{Fits and smooths can be done on data \code{Y-Shift} to improve numerical stability: often, \code{Shift} will be the sample mean of the observations, as is done automatically in the \code{\link{EnsSLLTSmooth}} function. The model structure returned is for the shifted data, but with a \code{Shift} attribute containing the vector that must be added to the \code{m0} component and any state estimates to get back to the original scale.}
-  \item{NRuns}{Number of ensemble members}
+  \item{NEnsTS}{Number of time series coming from the ensemble. This will often be the number of ensemble members, but it's possible that some series have been averaged over some subsets of the members: see the \code{NRuns} argument.}
   \item{Groups}{Vector indicating group membership for each ensemble member. This should be used if an ensemble contains multiple runs from one or more simulators (climate models): in this case the elements of \code{Groups} should be integers between 1 and \code{G} where \code{G} is the total number of simulators contributing to the ensemble: \code{Groups[i]} is the index of the simulator that was used to produce the \eqn{i}th ensemble member. If \code{NULL} (the default), each member is assumed to come from a different simulator. 
 }
+  \item{RunsPerTS}{Optional vector, of length \code{NEnsTS}. If present, the \eqn{i}th series from the ensemble is interpreted as a mean of \code{RunsPerTS[i]} independent ensemble members e.g. produced from the corresponding simulator under different initial conditions.}
   \item{discrepancy}{Either "varying" (the default) or "constant". If "constant" then the discrepancies between each ensemble member and reality are constant through time; otherwise they evolve as random walks.}
   \item{UseAlpha}{Logical scalar indicating whether or not to include a scaling factor (\eqn{\alpha}{alpha} in the "Details" section of \code{\link{EnsEBMtrend.modeldef}}) when relating the ensemble consensus trend to that in the real climate system.  If \code{FALSE}, the value of \eqn{\alpha}{alpha} is set to 1.}
   \item{constrain}{Logical scalar indicating whether or not to constrain the discrepancy trends and slopes for the individual ensemble members to sum to zero. Without this constraint, the model is formally not identifiable --- although linear combinations of elements of the state vector are.}
@@ -37,10 +38,10 @@ If \code{discrepancy="varying"} and \code{UseAlpha} is \code{TRUE} then the para
 \describe{
 \item{\code{theta[1]}}{This is \eqn{\alpha}{alpha}, the scaling on the relationship between the ensemble consensus and observed trend processes.}
 \item{\code{theta[2]}}{This is \eqn{\log(\sigma^{2}_{0})}{log(sigsq[0])}, where \eqn{\sigma^{2}_{0}}{sigsq[0])} is the "measurement error" variance in the real-world series.}
-\item{\code{theta[3]}}{This is \eqn{\log(\tau^{2}_{0})}{log(tausq[0])}, where \eqn{\tau^{2}_{0}}{tausq[0]} is slope innovation variance in the real-world series (see documentation for \code{\link{SLLT.modeldef}}).}
-\item{\code{theta[4]}}{This is \eqn{\log(\tau^{2}_{\omega})}{log(tausq[omega])}, where \eqn{\tau^{2}_{\omega}}{tausq[omega]} is the innovation variance for the random-walk process representing the shared discrepancy between the trend slopes in the ensemble members and the real world.}
+\item{\code{theta[3]}}{This is \eqn{\log(\tau^{2}_{0})}{log(tausq[0])}, where \eqn{\tau^{2}_{0} \coloneqq {\rm Var}\left[\beta_{0}(t)-\beta_{0}(t-1)\right]}{tausq[0] := Var{beta[0](t)-beta[0](t-1)}} is the slope innovation variance in the real-world series (see documentation for \code{\link{SLLT.modeldef}}).}
+\item{\code{theta[4]}}{This is \eqn{\log(\tau^{2}_{\omega})}{log(tausq[omega])}, where \eqn{\tau^{2}_{\omega} \coloneqq {\rm Var}\left[\tilde{\beta}_{\omega}(t)-\tilde{\beta}_{\omega}(t-1)\right]}{tausq[omega] := Var{tilde(beta)[omega](t)-tilde(beta)[omega](t-1)}} is the innovation variance for the random-walk process representing the shared discrepancy between the trend slopes in the ensemble members and the real world.}
 \item{\code{theta[5]}}{This is \eqn{\log(\sigma^{2}_{1})}{log(sigsq[1])}, where \eqn{\sigma^{2}_{1}}{sigsq[1]} is the common "measurement error" variance for each of the ensemble members.}
-\item{\code{theta[6]}}{This is \eqn{\log(\tau^{2}_{1})}{log(tausq[1])}, where \eqn{\tau^{2}_{1}}{tausq[1]} is the common slope innovation variance for each of the ensemble members' individual trend discrepancies about their consensus trend.}
+\item{\code{theta[6]}}{This is \eqn{\log(\tau^{2}_{1})}{log(tausq[1])}, where \eqn{\tau^{2}_{1} \coloneqq {\rm Var}\left[\tilde{\beta}_{i}(t)-\tilde{\beta}_{i}(t-1)\right]}{tausq[1] := Var{tilde(beta)[i](t)-tilde(beta)[i](t-1)}} is the common slope innovation variance for each of the ensemble members' individual trend discrepancies about their consensus trend.}
 }
 
 If \code{discrepancy="constant"} and \code{UseAlpha} is \code{FALSE} then \code{theta} is a 4-element vector containing \eqn{\alpha}{alpha}, \eqn{\log(\sigma^{2}_{0})}{log(sigsq[0])}, \eqn{\log(\tau^{2}_{0})}{log(tausq[0])} and \eqn{\log(\sigma^{2}_{1})}{log(sigsq[1])}: in this case, \eqn{\tau^{2}_{\omega}}{tausq[omega]} and \eqn{\tau^{2}_{1}}{tausq[1]} are both taken as zero.

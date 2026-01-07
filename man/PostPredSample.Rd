@@ -4,7 +4,7 @@
 \title{Sample from posterior predictive distribution of observable time series}
 \description{To draw samples from the posterior predictive distribution of observable time series (real-world or ensemble members) using a fitted dynamic linear model (DLM).}
 \usage{
-PostPredSample(Data, ModelBundle, Build, N, Random = TRUE, 
+PostPredSample(ModelBundle, Y=NULL, Build, N, Random = TRUE, 
                Quantile = TRUE, Level = ifelse(Quantile, 1.96, 0.99), 
                df = NULL, Antithetic = c("Mean", "Scale"), 
                Importance = FALSE, CheckMax = FALSE, 
@@ -14,8 +14,8 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{Data}{The data: a matrix in which the first column contains an observed time series and the remainder contain ensemble members.}
   \item{ModelBundle}{A list containing at least the named components \code{Model} (an object of class \code{dlm}) and \code{Theta} (a list containing a maximimum likelihood or MAP fit of a state space model, typically the result of a call to \code{\link{dlm.SafeMLE}} or equivalent). \strong{NB} it's assumed that the model is set up in such a way that the "real-world" time series is the first element of each observation vector. The \code{*Smooth} routines in the \pkg{TimSPEC} package produce objects with the required structure. }
+  \item{Y}{Optional matrix of data, in which the first column contains an observed time series and the remainder contain ensemble members. If \code{NULL}, \code{Y} will be taken from the \code{Data$Y} component of \code{ModelBundle} if this exists.}
   \item{Build}{A function that will construct the \code{dlm} object representing the model being fitted. Typically one of the \code{.modeldef} functions in the \pkg{TimSPEC} package. }
   \item{N}{Number of posterior samples to draw. Ignored if \code{Random} is \code{FALSE} (see below). }
   \item{Random}{If \code{TRUE} (the default) then samples are drawn randomly from the (approximate) posterior. If \code{FALSE}, a systematic sample is taken. See \code{\link{dlm.ThetaSample}} for more details. }
@@ -32,7 +32,7 @@ PostPredSample(Data, ModelBundle, Build, N, Random = TRUE,
   \item{ReplaceAll}{If \code{TRUE}, the returned object will contain random samples for all time points. If \code{FALSE} (the default), only the values missing from \code{Data} are simulated (and the non-missing values are included in the output). }
   \item{debug}{As in \code{\link[dlm]{dlmLL}}. }
   \item{messages}{Logical scalar, controlling whether to print progress to screen.}
-  \item{\dots}{Additional arguments to \code{build}. }
+  \item{\dots}{Additional arguments to \code{build}. Note, however, that if \code{build} has a \code{RunsPerTS} argument then the routine will take this from the \code{RunsPerTS} attribute of \code{Y} (or \code{ModelBundle$Data$Y}, whichever is used) if present e.g. arising from a call to \code{\link{CompactEns}}: in this case therefore, the user should not supply this argument separately. Similarly, if \code{build} has a \code{Groups} argument then this will be taken from the \code{Groups} component of \code{Data} if present.}
 }
 
 \value{The function is intended to return a list containing the following elements:
@@ -61,9 +61,8 @@ example(EBMtrendSmooth)
 ## importance sampling). Set seed for reproducible results.
 set.seed(2000)
 PPSApprox <- 
-    PostPredSample(as.matrix(GlobalTemps585$Obs), ModelBundle=EBMFit, 
-                 Build=EBMtrend.modeldef, N=250, m0=m0, kappa=k,
-                 Xt=ERF585$NetERF)
+    PostPredSample(ModelBundle=EBMFit, Build=EBMtrend.modeldef, 
+                   N=250, m0=m0, kappa=k, Xt=ERF585$NetERF)
 
 ## Plot the result. NB no ensemble members are used here, hence NAs in colours
 SmoothPlot(GlobalTemps585[,1:2], Samples=PPSApprox, 
@@ -73,9 +72,9 @@ SmoothPlot(GlobalTemps585[,1:2], Samples=PPSApprox,
 
 ## Same again with importance sampling
 PPS <- 
-    PostPredSample(as.matrix(GlobalTemps585$Obs), ModelBundle=EBMFit, 
-                 Importance=TRUE, CheckMax=TRUE, Build=EBMtrend.modeldef, 
-				 N=250, m0=m0, kappa=k, Xt=ERF585$NetERF)
+    PostPredSample(ModelBundle=EBMFit, Importance=TRUE, CheckMax=TRUE, 
+                   Build=EBMtrend.modeldef, N=250, m0=m0, kappa=k, 
+                   Xt=ERF585$NetERF)
 				 
 ##  Using BestID attribute to check that there are no better parameter sets
 ##  than the one in EBMFit
@@ -88,9 +87,9 @@ if(is.null(BestID)) cat("None found") else {
                          theta=PPS$Thetas[BestID,])
   
   PPS <- 
-    PostPredSample(as.matrix(GlobalTemps585$Obs), ModelBundle=EBMFit, 
-                 Importance=TRUE, CheckMax=TRUE, Build=EBMtrend.modeldef, 
-				 N=250, m0=m0, kappa=k, Xt=ERF585$NetERF)
+    PostPredSample(ModelBundle=EBMFit, Importance=TRUE, CheckMax=TRUE, 
+                   Build=EBMtrend.modeldef, N=250, m0=m0, kappa=k, 
+                   Xt=ERF585$NetERF)
 }
 
 SmoothPlot(GlobalTemps585[,1:2], Samples=PPS, 

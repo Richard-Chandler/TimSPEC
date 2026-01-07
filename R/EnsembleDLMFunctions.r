@@ -5,6 +5,10 @@
 # Mimic definitions and utility routines for time series outputs from
 # climate model ensembles. The routines in this script are as follows:
 #
+# CompactEns            Replaces a matrix of time series from an 
+#                       ensemble with a smaller matrix in which 
+#                       members from the same source have been 
+#                       averaged. 
 # CumulativeWeightPlot  Plots the cumulative contributions of a vector 
 #                       of weights, sorted in descending order.
 # dlm.ImportanceWts     Calculate importance weights for a sample
@@ -36,6 +40,7 @@
 # EnsEBMtrendSmooth     now for simultaneous analysis of an "observed"
 #                       time series together with a set of exchangeeable
 #                       ensemble members.
+# EnsImpute             Impute missing values in an ensemble
 # EnsMean               Calculates mean series for an ensemble, possibly
 #                       accounting for ensemble structure. 
 # EnsSLLT.modeldef,     Analysis of observed time series and exchangeable
@@ -61,6 +66,8 @@
 # make.SSinits          Finds initial estimates for the state vector in a
 #                       dynamic linear model. This is from the software 
 #                       provided with Chandler & Scott (2011).
+# NApatterns            Returns a vector coding for the patterns of 
+#                       missingness in an ensemble of time series. 
 # plot.ImportanceWts    Pairs plot of posterior parameter samples, 
 #                       with points shaded / coloured according to 
 #                       importance sampling weights. 
@@ -446,13 +453,182 @@ QuitNow <- function(x, QuitEarly) {
   isTRUE(SignMult * (x-QuitEarly$reference) > 0)
 }
 ######################################################################
+CompactEns <- function(Data, Groups, impute=FALSE) {
+  #
+  #  Produces a compact representation of an ensemble of time series,
+  #  in which multiple members from the same source are replaced with
+  #  a single series which is the mean of those members. Arguments:
+  #
+  #  Data   Matrix or data frame containing observed time series in its
+  #         first column and ensemble members in the remainder.
+  #         NB column 1 is ignored: it's part of the argument
+  #         for consistency with other routines in the TimSPEC
+  #         package. May have an attribute RunsPerTS (see the value
+  #         of the function below), if the ensemble has already been
+  #         partially compacted.
+  #  Groups A vector (numeric, character or factor) specifying the 
+  #         grouping structure in the ensemble, of length 
+  #         ncol(Data)-1 corresponding to the ensemble-derived
+  #         series in Data. Series with the same value of Groups
+  #         are considered to come from the same source (e.g. the
+  #         same GCM but under different initial conditions).
+  #  impute Controls whether to attempt to impute missing values
+  #         using EnsImpute.
+  #
+  #  The function returns a matrix or data frame analogous to Data, but 
+  #  containing the observed series in column 1 and the group mean 
+  #  series in subsequent columns. The result has an attribute 
+  #  RunsPerTS, which is a vector containing the numbers of series
+  #  contributing to each of the group means. If Data itself 
+  #  had such an attribute, then the RunsPerTS attribute of the 
+  #  result is obtained by summing the corresponding elements and 
+  #  the "group mean" series are weighted accordingly; otherwise 
+  #  it's just a count of the numbers of series being averaged. 
+  #
+  ######################################################################
+  y <- Data[,-1] # Initial data matrix: each column is a member
+  NGroups <- length(unique(Groups))
+  z <- y[,1:NGroups] # Same class as y but with a column per group
+  #
+  #   Can have time points with no ensemble members: exclude
+  #   these from calculations
+  #
+  NoData <- apply(y, MARGIN=1, FUN=function(x) all(is.na(x)))
+  #
+  #   Do imputation if requested. 
+  #
+  if (impute) y <- EnsImpute(y)
+  #
+  #  Set number of runs contributing to each column to 1 if necessary
+  #
+  RunsPerTS <- attr(Data, "RunsPerTS")
+  if (is.null(RunsPerTS)) RunsPerTS <- rep(1, ncol(y))
+  if (length(RunsPerTS) != ncol(y)) {
+    stop(paste("RunsPerTS attribute of Data should have", ncol(y), "elements"))
+  }
+  #
+  #   Now we have the data from which the group mean series can be
+  #   calculated. Here are functions to calculate numerators and
+  #   denominators for group means in a single row. 
+  #
+  WtSum <- function(x, RunsPerTS, Groups) { # Weighted sums by group
+    n <- RunsPerTS; n[is.na(x)] <- 0
+    xx <- x; xx[is.na(x)] <- 0 # sum(xx)/sum(n) will give correct means
+    z <- tapply(xx*n, INDEX=Groups, FUN=sum)
+    z
+  } 
+  Numers <- apply(y[!NoData,], MARGIN=1, FUN=WtSum, 
+                  RunsPerTS=RunsPerTS, Groups=Groups)
+  NSum <- function(x, RunsPerTS, Groups) { # No. of runs per group
+    n <- RunsPerTS; n[is.na(x)] <- 0
+    z <- tapply(n, INDEX=Groups, FUN=sum)
+    z
+  } 
+  Denoms <- apply(y[!NoData,], MARGIN=1, FUN=NSum, 
+                  RunsPerTS=RunsPerTS, Groups=Groups)
+  #
+  #   Check that there are no rows with incomplete but non-empty groups
+  #
+  DenomCheck <- apply(Denoms, MARGIN=1, FUN=function(x) {
+    max(x[x>0], na.rm=TRUE)-min(x[x>0], na.rm=TRUE) < 
+      10*.Machine$double.neg.eps
+  })
+  if (!all(DenomCheck)) {
+    stop("Some time points have non-empty but incomplete groups")
+  }
+  z[NoData,] <- NA
+  TotRuns <- apply(Denoms, MARGIN=1, FUN=max, na.rm=TRUE)
+  z[!NoData,] <- t(Numers / Denoms)
+  z <- cbind(Data[,1], z) # Add the observed series back
+  attr(z, "RunsPerTS") <- TotRuns
+  colnames(z) <- c(colnames(Data)[1], row.names(Numers))
+  z
+}
+######################################################################
+EnsImpute <- function(Y, method="lm") {
+  #
+  #  To impute missing values in an ensemble of time series. 
+  #  Missing values are replaced by the fitted values from an 
+  #  additive ANOVA model with effects corresponding to ensemble 
+  #  member and to the time variable (treated as a factor). 
+  #  The argument Y is a matrix or data frame, with each column 
+  #  corresponding to an ensemble member and with each row
+  #  corresponding to a time point. The function returns an
+  #  object like Y, with the NAs replaced as described. 
+  #
+  #  With method="lm" (the default), the ANOVA model is fitted
+  #  using least squares. With method="approx", an approximate
+  #  fit is obtained using formulae for a complete 2-way layout:
+  #  this is much cheaper than the least-squares approach and
+  #  should give an accurate approximation if the proportion of 
+  #  missing values is very small. 
+  #
+  ######################################################################
+  z <- Y # Storage for final result
+  #
+  #   Can have time points with no ensemble members: exclude
+  #   these from calculations
+  #
+  NoData <- apply(Y, MARGIN=1, FUN=function(x) all(is.na(x)))
+  y <- Y[!NoData,]
+  #
+  #   Do imputation if requested. The approximate method is 
+  #   based on the algebraic computation for a 2-way additive 
+  #   ANOVA with complete data which is 
+  #
+  #        Y.. + (Yi.-Y..) + (Y.j-Y..) = Yi. + (Y.j-Y..),
+  #
+  #   but estimating each term using the most complete set of
+  #   data possible.
+  #
+  if (method=="approx") {
+    MbrEffect <- colMeans(y, na.rm=TRUE) # Ensemble member effects
+    TimeEffect <- as.numeric(scale(rowMeans(y, na.rm=TRUE), scale=FALSE))
+    Fitted <- outer(TimeEffect, MbrEffect, "+") 
+  } else if (method=="lm") {
+    Row <- as.factor(row(y)); Col <- as.factor(col(y))
+    Model <- lm(as.numeric(as.matrix(y)) ~ Row + Col)
+    Fitted <- matrix(predict(Model, newdata=data.frame(Row=Row, Col=Col)),
+                     nrow=nrow(y))
+  } else {
+    stop("'method' must be either 'approx' or 'lm'")
+  }
+  y[is.na(y)] <- Fitted[is.na(y)]
+  z[!NoData,] <- y
+  z
+}
+######################################################################
+NApatterns <- function(Y) {
+  #
+  #   To identify the patterns of missingness in rows of a matrix
+  #   or data frame (Y, the input). The function returns a character
+  #   vector with an element for each row of y, encoding the 
+  #   positions of the NA values in that row. For example, if 
+  #   the values in columns 1 and 3 are NA then the corresponding
+  #   element of the result will be "1,3". 
+  #
+  apply(Y, MARGIN=1, FUN=function(x) paste(which(is.na(x)), collapse=","))
+}
+######################################################################
+NA.AllOr0 <- function(Y) {
+  #
+  #   To check whether the rows of a data frame or matrix are either
+  #   all missing or all non-missing. Returns TRUE if so, and FALSE if 
+  #   at least one row is partially missing.  
+  #
+  isTRUE(
+    all(apply(Y, MARGIN=1, FUN=function(x) { 
+      sum(is.na(x)) %in% c(0,length(x)) } ))
+  )
+}
+######################################################################
 EnsMean <- function(Data, Groups=NULL, na.option=NULL) {
   #
   #  Calculates an ensemble mean series from its members. Arguments: 
   #
   #  Data   Data frame containing observed time series in its
   #         first column and ensemble members in the remainder.
-  #         NB column 2 is ignored: it's part of the argument
+  #         NB column 1 is ignored: it's part of the argument
   #         for consistency with other routines in the TimSPEC
   #         package.
   #  Groups A vector or matrix specifying any structure in the
@@ -493,36 +669,27 @@ EnsMean <- function(Data, Groups=NULL, na.option=NULL) {
   #  and to the time variable (treated as a factor). 
   #
   ######################################################################
-  y <- t(as.matrix(Data[,-1])) # Initial data matrix: each row is a member
-  z <- rep(NA, ncol(y)) # Storage for final result
+  y <- as.matrix(Data[,-1]) # Initial data matrix: each column is a member
+  z <- rep(NA, nrow(y)) # Storage for final result
   #
   #   Can have time points with no ensemble members: exclude
   #   these from calculations
   #
-  NoData <- apply(y, MARGIN=2, FUN=function(x) all(is.na(x)))
-  y <- y[,!NoData]
+  NoData <- apply(y, MARGIN=1, FUN=function(x) all(is.na(x)))
+  y <- y[!NoData,]
   #
-  #   Do imputation if requested. It's based on the algebraic
-  #   computation for a 2-way additive ANOVA which is 
-  #
-  #        Y.. + (Yi.-Y..) + (Y.j-Y..) = Yi. + (Y.j-Y..),
-  #
-  #   but estimating each term using the most complete set of
-  #   data possible.
+  #   Do imputation if requested. 
   #
   if ( (is.null(Groups) & "na.impute" %in% na.option) |
        (!is.null(Groups) & ("na.impute" %in% na.option | is.null(na.option))) ) {
-    GrpMeans <- rowMeans(y, na.rm=TRUE) # Ensemble member effects
-    TimeEffect <- scale(colMeans(y, na.rm=TRUE), scale=FALSE)
-    Fitted <- outer(GrpMeans, TimeEffect, "+")[,,1] # Drop final redundant direction
-    y[is.na(y)] <- Fitted[is.na(y)]
+    y <- EnsImpute(y)
   }
   #
   #   Now we have the data from which the means can be calculated
   #
   if (is.null(Groups)) { # Unstructured case: "na.pass" will lead to NAs
     na.rm <- (is.null(na.option) | "na.rm" %in% na.option)
-    z[!NoData] <- colMeans(y, na.rm=na.rm)
+    z[!NoData] <- rowMeans(y, na.rm=na.rm)
   } else {
     #
     #   Now deal with other missing value patterns. The precise
@@ -537,15 +704,14 @@ EnsMean <- function(Data, Groups=NULL, na.option=NULL) {
     #   the intercept directly (avoids use of lm() which produces
     #   a whole load of other stuff that isn't needed).
     #
-    NAs <- apply(y, MARGIN=2, FUN=function(x) {
-      paste(which(is.na(x)), collapse=",") } )
+    NAs <- NApatterns(y)
     PatternsToProcess <- ""
     if ("na.rm" %in% na.option) PatternsToProcess <- unique(NAs)
-    Intercepts <- rep(NA, ncol(y))
+    Intercepts <- rep(NA, nrow(y))
     for (i in 1:length(PatternsToProcess)) {
       Times <- (NAs==PatternsToProcess[i]) # Time points with this pattern
-      Members <- # Ensemble members contributing to estimates for this pattern
-        !( (1:nrow(y)) %in% unlist(strsplit(PatternsToProcess[i], ",")) )
+      Members <- # Members contributing to estimates for this pattern
+        !( (1:ncol(y)) %in% unlist(strsplit(PatternsToProcess[i], ",")) )
       GrpFac <- apply(as.matrix(Groups)[Members,,drop=FALSE], 
                       MARGIN=2, FUN=as.factor, simplify=FALSE)
       names(GrpFac) <- paste("V",1:length(GrpFac),sep="")
@@ -555,7 +721,10 @@ EnsMean <- function(Data, Groups=NULL, na.option=NULL) {
       X <- model.matrix(~ ., GrpFac) 
       options(contrasts = OldOpt)
       XXInv <- solve(crossprod(X))[1,,drop=FALSE] # Just need first row
-      XY <- crossprod(X, y[Members,Times])
+      XY <- crossprod(X, t(y[Times, Members])) # NB standard formula is
+                                               # X'Y but that's when Y 
+                                               # is a column vector: here
+                                               # the vectors are rows of y
       Intercepts[Times] <- XXInv %*% XY
     }
     z[!NoData] <- Intercepts
@@ -1756,16 +1925,27 @@ dlm.ImportanceWts <- function(samples, build, Y, prior.pars=NULL,
   }
   #
   #   Use shifted data to calculate log-likelihoods, for improved
-  #   accuracy
+  #   accuracy; and take care over arguments, in case user has
+  #   passed RunsPerTS in ... when Y already has it as an 
+  #   attribute.
   #
   Ybar <- mean(Y[,1], na.rm=TRUE)
-  log.h <- -apply(samples, MARGIN=1, 
-                  FUN=dlm.SafeLL, Y=Y-Ybar, build=build, 
-                  prior.pars=prior.pars, Shift=Ybar, 
-                  debug=debug, ...)
-  log.hhat <- -dlm.SafeLL(attr(samples, "Mean"), Y=Y-Ybar, build=build, 
-                          prior.pars=prior.pars, Shift=Ybar, 
-                          debug=debug, ...)
+  DotArgs <- list(...)
+  if (!is.null(attr(Y, "RunsPerTS"))) {
+    if (!is.null(DotArgs$RunsPerTS)) {
+      warning("Ignoring argument RunsPerTS and using data attribute instead")
+      DotArgs <- DotArgs[-which(names(DotArgs)=="RunsPerTS")]
+    }
+  }
+  DotArgs$RunsPerTS <- attr(Y, "RunsPerTS")
+  log.h <- 
+    -do.call(apply, c(list(X=samples, MARGIN=1, FUN=dlm.SafeLL,
+                           Y=Y-Ybar, build=build, prior.pars=prior.pars,
+                           Shift=Ybar, debug=debug), DotArgs))
+  log.hhat <- 
+    -do.call(dlm.SafeLL, c(list(theta=attr(samples, "Mean"), Y=Y-Ybar,
+                                build=build, prior.pars=prior.pars, 
+                                Shift=Ybar, debug=debug), DotArgs))
   #
   #   The unnormalised weights are now exp(log.h-log.g); these can 
   #   be large due to the arbitrary constants omitted from the
@@ -1908,9 +2088,17 @@ SampleStates <- function(Thetas, build, Y, NonNeg=NULL,
   #   an array to store the samples - for which we need to
   #   find the dimension of the state vector.
   #
-  Model <- build(theta=Thetas[1,], ...)
+  DotArgs <- list(...)
+  if (!is.null(attr(Y, "RunsPerTS"))) {
+    if (!is.null(DotArgs$RunsPerTS)) {
+      warning("Ignoring argument RunsPerTS and using data attribute instead")
+      DotArgs <- DotArgs[-which(names(DotArgs)=="RunsPerTS")]
+      DotArgs$RunsPerTS <- attr(Y, "RunsPerTS")
+    }
+  }
+  Model <- do.call(build, c(list(theta=Thetas[1,]), DotArgs))
   if (ncol(Y) != nrow(Model$FF)) {
-    stop("Dimension mismatch between Data and model definition in build")
+    stop("Dimension mismatch between Y and model definition in build")
   }
   NSamp <- nrow(Thetas)
   Nt <- nrow(Y)
@@ -1929,7 +2117,8 @@ SampleStates <- function(Thetas, build, Y, NonNeg=NULL,
     if (as.numeric(messages)>0) {
       cat(paste("Processing sample",i,"of",NSamp,"...\r"))
     }
-    Model <- build(theta=Thetas[i,], Shift=Ybar, ...)
+    Model <- 
+      do.call(build, c(list(theta=Thetas[i,], Shift=Ybar), DotArgs))
     Mod.Filtered <- try(dlmFilter(y=Y-Ybar, mod=Model, debug=debug),
                         silent=TRUE)
     if (!inherits(Mod.Filtered, "try-error")) {
@@ -2066,8 +2255,20 @@ SampleObs <- function(Thetas, States, build, Y, WhichEls=1:ncol(Y),
   res <- array(dim=c(Nt, p, NSamp),
                dimnames=list(Time=1:Nt, Series=1:p, Sample=1:NSamp))
   NonMiss <- !is.na(Y[,WhichEls])
+  #
+  #   And, as with SampleStates, need to check for unnecessary 
+  #   user-supplied arguments.
+  #
+  DotArgs <- list(...)
+  if (!is.null(attr(Y, "RunsPerTS"))) {
+    if (!is.null(DotArgs$RunsPerTS)) {
+      warning("Ignoring argument RunsPerTS and using data attribute instead")
+      DotArgs <- DotArgs[-which(names(DotArgs)=="RunsPerTS")]
+      DotArgs$RunsPerTS <- attr(Y, "RunsPerTS")
+    }
+  }
   for (i in 1:NSamp) {
-    Model <- build(theta=Thetas[i,], ...)
+    Model <- do.call(build, c(list(theta=Thetas[i,]), DotArgs))
     FF <- Model$FF[WhichEls,]
     V.SpD <- eigen(Model$V[WhichEls, WhichEls])
     #
@@ -2091,7 +2292,7 @@ SampleObs <- function(Thetas, States, build, Y, WhichEls=1:ncol(Y),
   res[,,,drop=TRUE] # Drop redundant dimensions
 }
 ######################################################################
-PostPredSample <- function(Data, ModelBundle, Build, N,  
+PostPredSample <- function(ModelBundle, Y=NULL, Build, N,  
                            Random=TRUE, Quantile=TRUE, 
                            Level=ifelse(Quantile, 1.96, 0.99),
                            df=NULL, Antithetic=c("Mean", "Scale"),
@@ -2104,9 +2305,6 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   #   distribution of observable time series (observations
   #   or ensemble members) using a fitted dlm. Arguments: 
   #
-  #   Data          The data: a matrix in which the first
-  #                 column contains an observed time series
-  #                 and the remainder contain ensemble members.  
   #   ModelBundle   A list containing at least the named components
   #                 "Model" (an object of class dlm) and "Theta"
   #                 (a list containing a maximimum likelihood or 
@@ -2116,6 +2314,11 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   #                 observation vector. The *Smooth() routines
   #                 in this script produce objects with the 
   #                 the required structure. 
+  #   Y             Optional matrix of data, in which the first
+  #                 column contains an observed time series
+  #                 and the remainder contain ensemble members. If
+  #                 NULL, Y will be taken from the Data$Y component
+  #                 of ModelBundle if this exists.
   #   Build         A function that will construct the dlm object 
   #                 representing the model being fitted. Typically
   #                 one of the .modeldef functions in this script.
@@ -2140,7 +2343,7 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   #   CheckMax		If TRUE and if Importance is TRUE, the routine
   #                 will check that none of the sampled parameter 
   #					values has a higher (penalised) log-likelihood
-  #                 than ModelBundel$Theta
+  #                 than ModelBundle$Theta
   #   ReplaceOnFail Logical scalar, used to control the behaviour
   #                 of the routine if the posterior sampling of 
   #                 states fails for some parameter sets. If TRUE,
@@ -2180,7 +2383,38 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
   #   scalar indicating whether some of the initial samples
   #   were replaced). 
   #
-  if (!is.matrix(Data)) stop("Data must be a matrix")
+  #   Start by extracting the data. 
+  #
+  if (!is.null(Y)) {
+    if (!is.matrix(Y)) stop("Y must be a matrix")
+    Data <- Y
+  } else {
+  #
+  #   Where data come from ModelBundle, need to ensure no
+  #   conflicts with user-supplied arguments
+  #
+    Data <- ModelBundle$Data$Y
+    if (is.null(Data)) {
+      stop("ModelBundle contains no Data$Y component")
+    }
+    Data <- as.matrix(Data)
+    attr(Data, "RunsPerTS") <- attr(ModelBundle$Data$Y, "RunsPerTS")
+  }
+  DotArgs <- list(...)
+  if (!is.null(DotArgs$RunsPerTS) & !is.null(attr(Data, "RunsPerTS"))) {
+    warning("Ignoring argument RunsPerTS and using data attribute instead")
+    DotArgs <- DotArgs[-which(names(DotArgs)=="RunsPerTS")]
+  }
+  if ("Groups" %in% names(ModelBundle$Data)) {
+    if (!is.null(DotArgs$Groups)) {
+      warning("Ignoring argument Groups and using data attribute instead")
+    }
+    DotArgs$Groups <- ModelBundle$Data$Groups
+  }
+  if ("Groups" %in% names(DotArgs) & # Incredibly annoying, this one!
+    !("Groups" %in% names(formals(Build)))) {
+    DotArgs <- DotArgs[-which(names(DotArgs)=="Groups")]
+  }
   if (ReplaceOnFail & !Random) {
     stop("ReplaceOnFail can't be TRUE unless Random is also TRUE")
   }
@@ -2196,24 +2430,25 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
                     Antithetic=Antithetic)
   if (Importance) {
     if (as.numeric(messages)>0) cat("Calculating importance weights ...\n")
-    z$Weights <- 
-      dlm.ImportanceWts(z$Thetas, build=Build, Y=Data, 
+    IWArgs <- c(list(samples=z$Thetas, build=Build, Y=Data, 
                         prior.pars=ModelBundle$Theta$prior.pars,
-                        debug=debug, ...)
-	if (CheckMax & any(z$Weights$log.h>0)) {
-	  warning(paste("See warning from dlm.ImportanceWts: quitting",
-                    "PostPredSample without\n  generating 'States' or 'Obs'",
-				    "components of result. 'Thetas' component has",
-				    "\n  'BestID' attribute giving number of row",
-				    "with highest log-posterior."))
-	  attr(z$Thetas, "BestID") <- which.max(z$Weights$log.h)			
-	  return(z)
-	}
+                        debug=debug), DotArgs)
+    z$Weights <- do.call(dlm.ImportanceWts, IWArgs)
+	  if (CheckMax & any(z$Weights$log.h>0)) {
+	    warning(paste("See warning from dlm.ImportanceWts: quitting",
+	                  "PostPredSample without\n  generating 'States' or 'Obs'",
+	                  "components of result. 'Thetas' component has",
+	                  "\n  'BestID' attribute giving number of row",
+	                  "with highest log-posterior."))
+	    attr(z$Thetas, "BestID") <- which.max(z$Weights$log.h)			
+	    return(z)
+	  }
   }
   if (as.numeric(messages)>0) cat("Sampling state vectors ...\n")
-  z$States <-
-    SampleStates(z$Theta, build=Build, Y=Data, debug=debug, 
-                 messages=messages, NonNeg=if (NonNeg) WhichEls else NULL, ...)
+  SSArgs <- c(list(Thetas=z$Theta, build=Build, Y=Data, 
+                     debug=debug, messages=messages, 
+                     NonNeg=if (NonNeg) WhichEls else NULL), DotArgs)
+  z$States <- do.call(SampleStates, SSArgs)
   FailedIDs <- attr(z$States, "FailedIDs")
   if (PlotFails) ExamineFailures(z$Thetas, FailedIDs)
   if (!is.null(FailedIDs)) {
@@ -2226,10 +2461,8 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
                           Antithetic=Antithetic)
         z$Thetas[FailedIDs,] <- NewThetas
         if (Importance) {
-          z$Weights[FailedIDs,] <- 
-             dlm.ImportanceWts(NewThetas, build=Build, Y=Data, 
-                               prior.pars=ModelBundle$Theta$prior.pars,
-                               debug=debug, ...)
+          IWArgs$samples <- NewThetas
+          z$Weights[FailedIDs,] <- do.call(dlm.ImportanceWts, IWArgs)
 	      if (CheckMax & any(z$Weights$log.h>0)) {
 	        warning(paste("See warning from dlm.ImportanceWts: quitting",
                           "PostPredSample without\n   generating 'Obs'",
@@ -2240,10 +2473,8 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
         	return(z)
           }
         }
-        NewStates <- 
-          SampleStates(NewThetas, build=Build, Y=Data, debug=debug,
-                       messages=messages, NonNeg=if (NonNeg) 1 else NULL, 
-                       ...)
+        SSArgs$Thetas <- NewThetas
+        NewStates <- do.call(SampleStates, SSArgs)
         z$States[FailedIDs,,] <- NewStates
         if (is.null(attr(NewStates, "FailedIDs"))) {
           FailedIDs <- NULL
@@ -2254,9 +2485,10 @@ PostPredSample <- function(Data, ModelBundle, Build, N,
     }
   }
   if (as.numeric(messages)>0) cat("Sampling observable series ...\n")
-  z$Obs <- SampleObs(z$Thetas, z$States, build=Build, Y=Data,
-                     WhichEls=WhichEls, ReplaceAll=ReplaceAll,
-                     NonNeg=NonNeg, ...)
+  SOArgs <- c(list(Thetas=z$Thetas, States=z$States, build=Build, 
+                   Y=Data, WhichEls=WhichEls, ReplaceAll=ReplaceAll,
+                   NonNeg=NonNeg), DotArgs)
+  z$Obs <- do.call(SampleObs, SOArgs)
   if (Importance) {
     #
 	#  NB dlm.ImportanceWts returns normalised weights: if there have been 
@@ -2638,11 +2870,11 @@ SLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, prior.pars=NULL,
     Smooth$s <-  # Add the shift back
       t(t(Smooth$s) + attr(ShiftMod, "Shift"))
   }
-  list(Theta=thetahat, Model=Model, Smooth=Smooth)
+  list(Data=list(Y=Y), Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
 EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
-                             Shift=0, NRuns, Groups=NULL, 
+                             Shift=0, NEnsTS, Groups=NULL, RunsPerTS=NULL,
                              discrepancy="varying", UseAlpha=TRUE,
                              constrain=TRUE) {
   #
@@ -2701,8 +2933,8 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
   #              with a "Shift" attribute containing the vectors
   #              that must be added to the m0 component and any
   #              state estimates to get back to the original scale. 
-  #   NRuns      Number of ensemble members
-  #   Groups     Vector of length NRuns, indicating group membership. 
+  #   NEnsTS     Number of series in ensemble (often # of members)
+  #   Groups     Vector of length NEnsTS, indicating group membership. 
   #              This should be used if an ensemble contains multiple 
   #              runs from one or more simulators: in this case the 
   #              elements of Groups should be integers between 1 and G
@@ -2727,7 +2959,7 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
   #              although linear combinations of elements of the 
   #              state vector are. 
   #
-  if (is.null(Groups)) Groups <- 1:NRuns
+  if (is.null(Groups)) Groups <- 1:NEnsTS
   if (UseAlpha) alpha <- theta[1] else alpha <- 1
   IdxShift <- 1-as.numeric(UseAlpha) # Shifts indices in theta
   sigsq.0 <- exp(theta[2-IdxShift])
@@ -2745,20 +2977,27 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
   }
   NGroups <- max(Groups)
   nS <- 2*(NGroups+2) # Length of state vector
-  FF <- matrix(0, nrow=NRuns+1, ncol=nS)
+  FF <- matrix(0, nrow=NEnsTS+1, ncol=nS)
   FF[1,1] <- 1; FF[-1,1] <- alpha; FF[-1,3] <- 1
   #
   # Next lines use matrix subsetting to pick out the correct columns
-  # for each RCM and GCM combination in Groups.
+  # for each simulator in Groups.
   #
   FF[cbind(2:nrow(FF), (2*Groups)+3)] <- 1
   if (constrain) {
     FF[1+which(Groups==max(Groups)), seq(5, nS-3, 2)] <- -1 # Sum-to-zero constraint on final simulator
   }
-  if (constrain) FF[NRuns+1, seq(5, nS-3, 2)] <- -1 # Sum-to-zero constraint on final row
+  if (constrain) FF[NEnsTS+1, seq(5, nS-3, 2)] <- -1 # Sum-to-zero constraint on final row
   GG <- diag(rep(1,nS))
   GG[(col(GG)%%2==0) & (col(GG)-row(GG)==1)] <- 1
-  V <- diag(c(sigsq.0, rep(sigsq.1, NRuns)))
+  V <- c(sigsq.0, rep(sigsq.1, NEnsTS))
+  if (!is.null(RunsPerTS)) { # Scale variances for averaged series
+    if (!isTRUE(length(RunsPerTS)==NEnsTS)) {
+      stop("RunsPerTS should be a vector of length NEnsTS")
+    }
+    V[-1] <- V[-1] / RunsPerTS
+  }
+  V <- diag(V)
   W <- diag(rep(0,nS)) 
   if (constrain) { # W is block diagonal if constraints are used
     diag(W)[c(2,4)] <- c(tausq.0, tausq.d)
@@ -2780,7 +3019,7 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
     init$m0 <- m0 - (Shift*c(1, 0, 1-alpha, rep(0, nS-3))) # For shifted data
   }
   if (constrain) { # For constrained model, set C0 to reflect sum-to-zero constraints as well
-    init$C0[5:nS, 5:nS] <- -kappa / NRuns
+    init$C0[5:nS, 5:nS] <- -kappa / NEnsTS
     diag(init$C0)[5:nS] <- diag(init$C0)[5:nS] + kappa
   }
   if (!is.null(C0)) { # Overwrite if the user supplied a value
@@ -2804,10 +3043,12 @@ EnsSLLT.modeldef <- function(theta, m0=NULL, C0=NULL, kappa=1e6,
   z
 }
 ######################################################################
-EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying", 
-                          Groups=NULL, UseAlpha=TRUE, prior.pars=NULL, theta=NULL,
-						  constrain=TRUE, Tiny=1/kappa, ObsSmooth, Ens0Theta, 
-                          messages=TRUE, Use.dlm=FALSE, debug=FALSE, ...) {
+EnsSLLTSmooth <- 
+  function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying", 
+           Groups=NULL, compact=!is.null(Groups), UseAlpha=TRUE, 
+           prior.pars=NULL, theta=NULL, constrain=TRUE, Tiny=1/kappa,
+           ObsSmooth, Ens0Theta, messages=TRUE, Use.dlm=FALSE, 
+           debug=FALSE, ...) {
   #
   #  Fits and applies a model of the form defined by EnsSLLT.modeldef or
   #  EnsSLLT0.modeldef. The arguments are:
@@ -2823,14 +3064,24 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
   #   discrepancy If "varying" (the default), the discrepancy term between 
   #               the observed and ensemble trends is time-varying; for a 
   #               constant discrepancy, set this to "constant". 
-  #   Groups      Vector indicating group membership for each ensemble member. 
-  #               This should be used if an ensemble contains multiple 
-  #               runs from one or more simulators: in this case the 
-  #               elements of Groups should be integers between 1 and G
-  #               where G is the total number of simulators contributing
-  #               to the ensemble: Groups[i] is the index of the simulator
-  #               that was used to produce the ith ensemble member. If NULL, 
-  #               each member is assumed to come from a different simulator. 
+  #   Groups      Vector indicating group membership for each 
+  #               ensemble member. This should be used if an ensemble
+  #               contains multiple runs from one or more simulators: 
+  #               in this case the elements of Groups should be integers
+  #               between 1 and G where G is the total number of 
+  #               simulators contributing to the ensemble: Groups[i] is 
+  #               the index of the simulator that was used to produce 
+  #               the ith ensemble member. If NULL, each member is 
+  #               assumed to come from a different simulator. 
+  #   compact     Logical scalar indicating whether to compact the
+  #               ensemble using CompactEns() before fitting. For 
+  #               ensembles with many members per simulator, this
+  #               may speed up the fitting without sacrificing 
+  #               information because the simulator-specific means
+  #               are sufficient statistics. Defaults to TRUE if
+  #               Groups is non-NULL and FALSE otherwise (because 
+  #               CompactEns() just returns the original ensemble
+  #               in that case). 
   #   UseAlpha    Logical scalar indicating whether or not to include
   #               a scaling factor to represent the expected value of
   #               the ensemble consensus trend slope beta[d] given the 
@@ -2879,7 +3130,36 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
   if (!(discrepancy %in% c("varying", "constant"))) {
     stop("discrepancy must be either 'constant' or 'varying'")
   }
-  NRuns <- ncol(Y) - 1 # Number of ensemble members
+  #
+  #   Check for partially missing rows of the ensemble data
+  #
+  if (!NA.AllOr0(Y[,-1])) {
+    warning(paste("Some but not all ensemble members contain missing",
+    "value at some time points.\nThis may cause problems when fitting",
+    "because the dlm library routines do not cope well\nwith missing",
+    "values in the observation vector unless the corresponding",
+    "measurement errors\nare uncorrelated."))
+  }
+  #
+  #  Compact the ensemble if requested (NB Y and Groups here are
+  #  local copies in the active environment, hence re-using them
+  #  won't affect anything else).
+  #
+  if (!is.null(Groups)) {
+    if (compact) {
+      Y <- CompactEns(Y, Groups)
+      Groups <- NULL # No need for groups now
+      message("######\n",
+              "######  NOTE: compacting Y and Groups. Do not use these objects",
+              "\n######  when working with the results of this call: use the ",
+              "\n######  versions in the `Data` component of the result.",
+              "\n######")
+    }
+  } else {
+    if (compact) warning("'compact' argument does nothing when Groups is NULL")
+  }
+  RunsPerTS <- attr(Y, "RunsPerTS") # Could be NULL
+  NEnsTS <- ncol(Y) - 1 # Number of series in ensemble
   EnsembleMean <- EnsMean(Y, Groups)
   Ybar <- mean(Y[,1], na.rm=TRUE)
   #
@@ -2891,46 +3171,62 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
                             m0=m0[1:2], C0=C0[1:2, 1:2],
                             kappa=kappa, debug=debug, ...)
   #
+  #   Get approximate values of SLLT fits to each series in the 
+  #   ensemble - for later use. Adjustment in second line is to 
+  #   account for the possibility that Y may be compacted at 
+  #   this point: the parameters are the log variances in the 
+  #   measurement equation, so the adjustment gets back to the
+  #   log variance before compacting by calculating group means. 
+  #
+  ApproxEnsPars <- SLLT.IniPar(Y[,-1], collapse=FALSE)
+  if (!is.null(RunsPerTS)) {
+    ApproxEnsPars[1,] <- ApproxEnsPars[1,] + log(RunsPerTS)
+  }
+  #
   #  Now fit a constant-discrepancy model if this is needed, which is the 
-  #  case EITHER if discrepancy=="constant" OR if discrepancy=="varying" and
-  #  Ens0Theta hasn't been provided. 
+  #  case EITHER if discrepancy=="constant" OR if discrepancy=="varying"
+  #  and Ens0Theta hasn't been provided. 
   #  
   if (as.numeric(messages)>0) {
     cat("Estimating model parameters - please be patient ...\n")
   }
   if (discrepancy=="constant" | 
-     (discrepancy=="varying" & is.null(theta) & missing("Ens0Theta"))) {
+      (discrepancy=="varying" & is.null(theta) & missing("Ens0Theta"))) {
     #
-    #   For the constant-discrepancy version and if UseAlpha is TRUE, initial 
-    #   value for theta[1] is 1 (implying that ensemble consensus slopes are
-    #   more or less proportional to those for observations). Initial values 
-    #   for theta[2] and theta[3] are the MLEs from an observation-only model, 
-    #   which needs to be fitted if not supplied as an argument. The smooth also
-    #   needs to be computed for use with a varying-discrepancy model later: 
-    #   this isn't needed for the constant-discrepancy case, but it's not
-    #   too expensive and the code is less fiddly. For theta[4], just take 
-    #   the first element of the "auto-initialise" obtained from the 
-    #   ensemble members
+    #   For the constant-discrepancy version and if UseAlpha is TRUE,
+    #   initial value for theta[1] is 1 (implying that ensemble 
+    #   consensus slopes are more or less proportional to those for
+    #   observations). Initial values for theta[2] and theta[3] are 
+    #   the MLEs from an observation-only model, which needs to be 
+    #   fitted if not supplied as an argument. The smooth also needs
+    #   to be computed for use with a varying-discrepancy model 
+    #   later: this isn't needed for the constant-discrepancy case, 
+    #   but it's not too expensive and the code is less fiddly. For
+    #   theta[4], use "auto-initialise" for each ensemble member,
+    #   then convert back to the scale of individual runs and average.
     #
     par.names <- c("alpha", "log(sigsq[0])", "log(tausq[0])", "log(sigsq[1])")
     if (!UseAlpha) par.names <- par.names[-1]
     if (!is.null(theta)) {
       theta.init <- theta 
-      } else {
-        theta.init <- c(1, ObsSmooth$Theta$par, SLLT.IniPar(Y[,-1])[1])
-        if (!UseAlpha) theta.init <- theta.init[-1]
-      }
+    } else {
+      sigsq1.init <- log(mean(exp(ApproxEnsPars[1,])))
+      theta.init <- c(1, ObsSmooth$Theta$par, sigsq1.init)
+      if (!UseAlpha) theta.init <- theta.init[-1]
+    }
     names(theta.init) <- par.names
     CurPriors <- prior.pars # Need to amend for this fit if discrepancy is "varying"
     Npars <- nrow(CurPriors)
-    if (discrepancy=="varying") CurPriors <- CurPriors[-c(Npars-2, Npars),]
+    if (discrepancy=="varying") {
+      CurPriors <- CurPriors[-c(Npars-2, Npars),]
+    }
     thetahat <- 
       dlm.SafeMLE(theta.init, Y-Ybar, EnsSLLT.modeldef, m0=m0, C0=C0, 
-                  kappa=kappa, Shift=Ybar, NRuns=NRuns, Groups=Groups, 
-                  discrepancy="constant", UseAlpha=UseAlpha, 
-                  prior.pars=CurPriors, constrain=constrain, 
-                  hessian=(discrepancy=="constant"), par.names=par.names, 
-                  Use.dlm=Use.dlm, 
+                  kappa=kappa, Shift=Ybar, NEnsTS=NEnsTS, Groups=Groups, 
+                  discrepancy="constant", RunsPerTS=RunsPerTS, 
+                  UseAlpha=UseAlpha, prior.pars=CurPriors, 
+                  constrain=constrain, hessian=(discrepancy=="constant"),
+                  par.names=par.names, Use.dlm=Use.dlm, 
                   messages=(messages & discrepancy=="constant"), 
                   debug=debug, ...)
   }
@@ -2939,10 +3235,10 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
                    "log(tausq[w])", "log(sigsq[1])", "log(tausq[1])")
     if (!UseAlpha) par.names <- par.names[-1]
     if (!is.null(theta)) {
-	  theta.init <- theta
-	} else {
+      theta.init <- theta
+    } else {
       #
-      #   For the varying-discrepancy version, three of the five initial
+      #   For the varying-discrepancy version, three of the initial
       #   values can be taken from a constant-discrepancy fit - which was
       #   either provided as Ens0Theta or calculated above.
       #
@@ -2954,52 +3250,50 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
       }
       #
       #  For theta[4], take the difference between the ensemble mean and 
-      #  observation-based smooth as an estimate of the discrepancy time 
+      #  observation-based smooth as an estimate of the discrepancy trend 
       #  series (don't forget to remove the first element of the 
       #  observation-based smooth corresponding to time point 0!). 
-      #  Then fit a SLLT model to this difference. 
+      #  theta[4] is the log variance of the second differences of this
+      #  discrepancy series.
       #
       EnsembleMean <- EnsMean(Y, Groups)
-      Death.hat <- EnsembleMean-ObsSmooth$Smooth$s[-1,1]
+      if (UseAlpha) {
+        Death.hat <- 
+          EnsembleMean - (theta.init[1] * ObsSmooth$Smooth$s[-1,1])
+      } else Death.hat <- EnsembleMean-ObsSmooth$Smooth$s[-1,1]
       IdxShift <- 1-as.numeric(UseAlpha) # Shifts indices in theta
-      cur.priors <- prior.pars[c(2,4)-IdxShift,]
-      cur.priors[1,1] <- cur.priors[1,1] - log(NRuns) # Suppress interannual variability in trend
-      #  
-      #  Now smoothing the difference series
+      theta.init[4] <- 
+        log(var(diff(Death.hat, differences=2), na.rm=TRUE))
       #
-      if (is.null(m0)) m0.0 <- NULL else m0.0 <- m0[3:4]
-      if (is.null(C0)) C0.0 <- NULL else C0.0 <- C0[3:4, 3:4]
-      Model0 <- 
-        SLLTSmooth(Death.hat, m0=m0.0, C0=C0.0, kappa=kappa, 
-                       prior.pars=cur.priors, 
-                       messages=FALSE, Use.dlm=Use.dlm, debug=debug, ...)
-      theta.init[4] <- Model0$Theta$par[2] # Slope innovation parameter
+      #  Initialise theta[6] to something very small, on the grounds 
+      #  that the existing constant-discrepancy fit corresponds to 
+      #  an inter-member variance of zero. By starting with a very 
+      #  small value therefore, hopefully we're already on a ridge
+      #  of the log posterior which will make it easier to locate
+      #  a global optimum. 
       #
-      #  For theta[6], calculate the variance of the innovations for the
-      #  slope process itself, then subtract the innovation variances 
-      #  of the observations and the shared discrepancy
-      #
-      theta.init[6] <- log(max(Tiny, exp(SLLT.IniPar(Y[,-1])[2]) - 
-                                 (exp(theta.init[3]) + exp(theta.init[4]))))
+      theta.init[6] <- log(1e-12)
       if (!UseAlpha) theta.init <- theta.init[-1]
     }
     names(theta.init) <- par.names
     thetahat <- 
       dlm.SafeMLE(theta.init, Y-Ybar, EnsSLLT.modeldef, m0=m0, C0=C0, 
-                  kappa=kappa, Shift=Ybar, NRuns=NRuns, Groups=Groups, 
-                  discrepancy="varying", UseAlpha=UseAlpha,
-                  prior.pars=prior.pars, constrain=constrain, 
-                  hessian=TRUE, messages=messages, par.names=par.names, 
-                  Use.dlm=Use.dlm, debug=debug, ...)
+                  kappa=kappa, Shift=Ybar, NEnsTS=NEnsTS, Groups=Groups, 
+                  RunsPerTS=RunsPerTS, discrepancy="varying", 
+                  UseAlpha=UseAlpha, prior.pars=prior.pars, 
+                  constrain=constrain, hessian=TRUE, messages=messages, 
+                  par.names=par.names, Use.dlm=Use.dlm, debug=debug, ...)
   }
   Model <- # Original scale
     EnsSLLT.modeldef(thetahat$par, m0=m0, C0=C0, kappa=kappa, 
-                     NRuns=NRuns, Groups=Groups, discrepancy=discrepancy, 
-					 UseAlpha=UseAlpha, constrain=constrain)
+                     NEnsTS=NEnsTS, Groups=Groups, RunsPerTS=RunsPerTS,
+                     discrepancy=discrepancy, UseAlpha=UseAlpha, 
+                     constrain=constrain)
   ShiftMod <- # 
     EnsSLLT.modeldef(thetahat$par, m0=m0, C0=C0, kappa=kappa, Shift=Ybar,
-                     NRuns=NRuns, Groups=Groups, discrepancy=discrepancy, 
-                     UseAlpha=UseAlpha, constrain=constrain)
+                     NEnsTS=NEnsTS, Groups=Groups, RunsPerTS=RunsPerTS, 
+                     discrepancy=discrepancy, UseAlpha=UseAlpha, 
+                     constrain=constrain)
   if (as.numeric(messages)>0) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
     print(summary.dlmMLE(thetahat))
@@ -3020,7 +3314,8 @@ EnsSLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, discrepancy="varying",
     Smooth$s <-  # Add the shift back
       t(t(Smooth$s) + attr(ShiftMod, "Shift"))
   }
-  list(Theta=thetahat, Model=Model, Smooth=Smooth)
+  list(Data=list(Y=Y, Groups=Groups),
+       Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
 EBMtrend.modeldef <- function(theta, Xt, m0=NULL, C0=NULL, 
@@ -3170,13 +3465,13 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE,
     Smooth$s <-  # Add the shift back
       t(t(Smooth$s) + attr(ShiftMod, "Shift"))
   }
-  list(Theta=thetahat, Model=Model, Smooth=Smooth)
+  list(Data=list(Y=Y), Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
 EnsEBMtrend.modeldef <- 
   function(theta, Xt, m0=NULL, C0=NULL, kappa=1e6, Shift=0, 
-           NRuns, Groups=NULL, UseAlpha=TRUE, UsePhi=TRUE, 
-           constrain=TRUE) {
+           NEnsTS, Groups=NULL, RunsPerTS=NULL, UseAlpha=TRUE, 
+           UsePhi=TRUE, constrain=TRUE) {
   #
   #  Sets up the structure of a state space model for an observed
   #  time series and ensemble from exchangeable simulators, with trend 
@@ -3233,8 +3528,8 @@ EnsEBMtrend.modeldef <-
   #              with a "Shift" attribute containing the vectors
   #              that must be added to the m0 component and any
   #              state estimates to get back to the original scale. 
-  #   NRuns      Number of ensemble members
-  #   Groups     Vector of length NRuns, indicating group membership. 
+  #   NEnsTS     Number of series in ensemble (often # of members)
+  #   Groups     Vector of length NEnsTS, indicating group membership. 
   #              This should be used if an ensemble contains multiple 
   #              runs from one or more simulators: in this case the 
   #              elements of Groups should be integers between 1 and G
@@ -3257,7 +3552,7 @@ EnsEBMtrend.modeldef <-
   #              although linear combinations of elements of the 
   #              state vector are. 
   #
-  if (is.null(Groups)) Groups <- 1:NRuns
+  if (is.null(Groups)) Groups <- 1:NEnsTS
   alpha <- if (UseAlpha) theta[1] else 1
   IdxShift <- 1-as.numeric(UseAlpha) # Shifts indices in theta
   sigsq.0 <- exp(theta[2-IdxShift])
@@ -3272,7 +3567,7 @@ EnsEBMtrend.modeldef <-
   }
   NGroups <- max(Groups)
   nS <- 3*(NGroups+2) # Length of state vector
-  FF <- matrix(0, nrow=NRuns+1, ncol=nS)
+  FF <- matrix(0, nrow=NEnsTS+1, ncol=nS)
   FF[1,1] <- 1; FF[-1,1] <- alpha; FF[-1,4] <- 1 
   #
   # Next lines use matrix subsetting to pick out the correct columns
@@ -3289,7 +3584,14 @@ EnsEBMtrend.modeldef <-
   GG[TVEls] <- -kappa # -kappa marks time-varying component
   JGG <- diag(rep(0,3*(NGroups+2)))
   JGG[TVEls] <- 1 # Time-varying elements of GG are from column 1 of X
-  V <- diag(c(sigsq.0, rep(sigsq.1, NRuns)))
+  V <- c(sigsq.0, rep(sigsq.1, NEnsTS))
+  if (!is.null(RunsPerTS)) { # Scale variances for averaged series
+    if (!isTRUE(length(RunsPerTS)==NEnsTS)) {
+      stop("RunsPerTS should be a vector of length NEnsTS")
+    }
+    V[-1] <- V[-1] / RunsPerTS
+  }
+  V <- diag(V)
   W <- diag(rep(0,nS))
   if (constrain) { # W is block diagonal if constraints are used
     diag(W)[c(2,5)] <- c(tausq.0, tausq.d)
@@ -3302,7 +3604,7 @@ EnsEBMtrend.modeldef <-
     JGG <- JGG[1:nS, 1:nS]
     W <- W[1:nS, 1:nS]
   } else { # Unconstrained version: W is diagonal
-    diag(W)[c(2,5,5+(3*(1:NRuns)))] <- c(tausq.0, tausq.d, rep(tausq.1, NRuns))
+    diag(W)[c(2,5,5+(3*(1:NEnsTS)))] <- c(tausq.0, tausq.d, rep(tausq.1, NEnsTS))
   }
   init <- make.SSinits(GG,W,kappa=kappa)
   if (!is.null(m0)) {
@@ -3333,10 +3635,11 @@ EnsEBMtrend.modeldef <-
   z
   }
 ######################################################################
-EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6, 
-                              prior.pars=NULL, theta=NULL, UseAlpha=TRUE, 
-							  UsePhi=TRUE, constrain=TRUE, messages=TRUE, 
-							  Use.dlm=FALSE, debug=FALSE, ...) {
+EnsEBMtrendSmooth <- 
+  function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
+           compact=!is.null(Groups), prior.pars=NULL, theta=NULL, 
+           UseAlpha=TRUE, UsePhi=TRUE, constrain=TRUE, messages=TRUE,
+           Use.dlm=FALSE, debug=FALSE, ...) {
   #
   #  Fits and applies a model of the form defined by EnsEBMtrend.modeldef.
   #  Arguments: 
@@ -3357,6 +3660,15 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
   #           If NULL (the default) this is determined automatically
   #           from the model structure. 
   #  kappa    Variance used to initialise diffuse elements of the state vector. 
+  #  compact  Logical scalar indicating whether to compact the
+  #           ensemble using CompactEns() before fitting. For 
+  #           ensembles with many members per simulator, this
+  #           may speed up the fitting without sacrificing 
+  #           information because the simulator-specific means
+  #           are sufficient statistics. Defaults to TRUE if
+  #           Groups is non-NULL and FALSE otherwise (because 
+  #           CompactEns() just returns the original ensemble
+  #           in that case). 
   #  UseAlpha Logical scalar indicating whether or not to include
   #           a scaling factor to represent the expected value of
   #           the ensemble consensus trend slope beta[d] given the 
@@ -3383,6 +3695,36 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
   #  the second is the fitted model itself, and the third is the result of 
   #  applying the Kalman Smoother to the input series using this fitted model. 
   #
+  #   Check for partially missing rows of the ensemble data
+  #
+  if (!NA.AllOr0(Y[,-1])) {
+    warning(paste("Some but not all ensemble members contain missing",
+                  "value at some time points.\nThis may cause problems when fitting",
+                   "because the dlm library routines do not cope well\nwith missing",
+                   "values in the observation vector unless the corresponding",
+                   "measurement errors\nare uncorrelated."))
+  }
+  #
+  #  Now compact the ensemble if requested (NB Y and Groups here
+  #  are local copies in the active environment, hence re-using 
+  #  them won't affect anything else).
+  #
+  if (!is.null(Groups)) {
+    if (compact) {
+      Y <- CompactEns(Y, Groups)
+      Groups <- NULL # No need for groups now
+      message("######\n",
+              "######  NOTE: compacting Y and Groups. Do not use these objects",
+              "\n######  when working with the results of this call: use the ",
+              "\n######  versions in the `Data` component of the result.",
+              "\n######")
+    }
+  } else {
+    if (compact) warning("'compact' argument does nothing when Groups is NULL")
+  }
+  RunsPerTS <- attr(Y, "RunsPerTS") # Could be NULL
+  NEnsTS <- ncol(Y)-1
+  #
   #  Start by finding initial values for a numerical maximisation of the 
   #  likelihood. For the real-world series these are obtained via a call to
   #  EBMtrendSmooth.For parameters that appear in the specification of the
@@ -3391,7 +3733,6 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
   #  trend. For the additional member-specific drift terms, just use 
   #  SLLT.IniPar to get a plausible initial value for sigsq.1.
   #
-  NRuns <- ncol(Y)-1
   par.names <- c("alpha", "log(sigsq[0])", "log(tausq[0])", 
                  "log(tausq[w])", "log(sigsq[1])", "log(tausq[1])")
   if (UsePhi) par.names <- c(par.names, "logit(phi[0])", "logit(phi[1])")
@@ -3421,7 +3762,7 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
     Death.hat <- EnsembleMean-Model0$Smooth$s[-1,1] # Remove first element (time 0)
     IdxShift <- 1-as.numeric(UseAlpha) # Shifts indices in theta
     cur.priors <- prior.pars[(if (UsePhi) c(2,4,8) else c(2,4))-IdxShift,]
-    cur.priors[1,1] <- cur.priors[1,1] - log(NRuns) # Suppress interannual variability in trend
+    cur.priors[1,1] <- cur.priors[1,1] - log(NEnsTS) # Suppress interannual variability in trend
     if (is.null(m0)) m0.0 <- NULL else m0.0 <- m0[4:6]
     if (is.null(C0)) C0.0 <- NULL else C0.0 <- C0[4:6, 4:6]
     Model0 <- 
@@ -3445,20 +3786,21 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
   thetahat <- 
     dlm.SafeMLE(theta.init, Y-Ybar, EnsEBMtrend.modeldef, Xt=Xt, m0=m0, 
                 C0=C0, kappa=kappa, Shift=Ybar, prior.pars=prior.pars,
-                NRuns=NRuns, Groups=Groups, constrain=constrain, 
-                UseAlpha=UseAlpha, UsePhi=UsePhi, hessian=TRUE, 
-                par.names=par.names, Use.dlm=Use.dlm, 
+                NEnsTS=NEnsTS, RunsPerTS=RunsPerTS, Groups=Groups,
+                constrain=constrain, UseAlpha=UseAlpha, UsePhi=UsePhi,
+                hessian=TRUE, par.names=par.names, Use.dlm=Use.dlm, 
                 messages=messages, debug=debug, ...)
   Model <- # Original scale
     EnsEBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
-                         kappa=kappa, NRuns=NRuns, Groups=Groups, 
-                         UseAlpha=UseAlpha, UsePhi=UsePhi, 
+                         kappa=kappa, NEnsTS=NEnsTS, RunsPerTS=RunsPerTS, 
+                         Groups=Groups, UseAlpha=UseAlpha, UsePhi=UsePhi, 
                          constrain=constrain)  
   ShiftMod <- # Shifted
     EnsEBMtrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
-                         kappa=kappa, Shift=Ybar, NRuns=NRuns, 
-                         Groups=Groups, UseAlpha=UseAlpha, 
-                         UsePhi=UsePhi, constrain=constrain)  
+                         kappa=kappa, Shift=Ybar, NEnsTS=NEnsTS, 
+                         RunsPerTS=RunsPerTS, Groups=Groups, 
+                         UseAlpha=UseAlpha, UsePhi=UsePhi, 
+                         constrain=constrain)  
   if (as.numeric(messages)>0) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
     print(summary.dlmMLE(thetahat))
@@ -3479,12 +3821,13 @@ EnsEBMtrendSmooth <- function(Y, Xt, Groups=NULL, m0=NULL, C0=NULL,  kappa=1e6,
     Smooth$s <-  # Add the shift back
       t(t(Smooth$s) + attr(ShiftMod, "Shift"))
   }
-  list(Theta=thetahat, Model=Model, Smooth=Smooth)
+  list(Data=list(Y=Y, Groups=Groups, RunsPerTS=RunsPerTS),
+       Theta=thetahat, Model=Model, Smooth=Smooth)
 }
 ######################################################################
 EnsEBM2waytrend.modeldef <- 
   function(theta, Xt, m0=NULL, C0=NULL, kappa=1e6, Shift=0, 
-           Groups, interactions="none", UseAlpha=TRUE, 
+           Groups, RunsPerTS=NULL, interactions="none", UseAlpha=TRUE, 
            UsePhi=TRUE, constrain=TRUE) {
     #
     #  Sets up the structure of a state space model for an observed
@@ -3594,12 +3937,12 @@ EnsEBM2waytrend.modeldef <-
     }
     R <- max(Groups[,1]) # Number of RCMs
     G <- max(Groups[,2]) # Number of GCMs
-    NRuns <- nrow(Groups) # Total number of runs in ensemble 
+    NEnsTS <- nrow(Groups) # Total number of series in ensemble 
     nS <- 3*(2+R+G+(R*G)) # Length of state vector including all interactions
     R.blocks <- 3:(R+2) # Blocks of state vector corresponding to main RCM effects ...
     G.blocks <- (R+3):(R+G+2) # ... and to main GCM effects ...
     RG.blocks <- (R+G+3):(R+G+(R*G)+2) # ... and to interactions
-    FF <- matrix(0, nrow=NRuns+1, ncol=nS)
+    FF <- matrix(0, nrow=NEnsTS+1, ncol=nS)
     FF[1,1] <- 1; FF[-1, 1] <- alpha; FF[-1,4] <- 1
     #
     # Next lines use matrix subsetting to pick out the correct columns
@@ -3628,7 +3971,14 @@ EnsEBM2waytrend.modeldef <-
     GG[TVEls] <- -kappa # -kappa marks time-varying component
     JGG <- diag(rep(0,nrow(GG)))
     JGG[TVEls] <- 1 # Time-varying elements of GG are from column 1 of X
-    V <- diag(c(sigsq.0, rep(sigsq.1, NRuns)))
+    V <- c(sigsq.0, rep(sigsq.1, NEnsTS))
+    if (!is.null(RunsPerTS)) { # Scale variances for averaged series
+      if (!isTRUE(length(RunsPerTS)==NEnsTS)) {
+        stop("RunsPerTS should be a vector of length NEnsTS")
+      }
+      V[-1] <- V[-1] / RunsPerTS
+    }
+    V <- diag(V)
     W <- diag(rep(0, nS))
     if (constrain) {
       #
@@ -3729,9 +4079,10 @@ EnsEBM2waytrend.modeldef <-
   }
 ######################################################################
 EnsEBM2waytrendSmooth <- 
-  function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, Groups, prior.pars=NULL, 
-           theta=NULL, interactions="none", UseAlpha=TRUE, UsePhi=TRUE, 
-           constrain=TRUE, messages=TRUE, Use.dlm=FALSE, debug=FALSE, ...) {
+  function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, Groups, compact=TRUE, 
+           prior.pars=NULL, theta=NULL, interactions="none", UseAlpha=TRUE,
+           UsePhi=TRUE, constrain=TRUE, messages=TRUE, Use.dlm=FALSE, 
+           debug=FALSE, ...) {
   #
   #  Fits and applies a model of the form defined by EnsEBM2waytrend.modeldef.
   #  Arguments: 
@@ -3760,6 +4111,12 @@ EnsEBM2waytrendSmooth <-
   #           the RCM used to produce the ith ensemble member (i.e. 
   #           column i+1 of Y) and Groups[i,2] is the number of the
   #           GCM. 
+  #   compact     Logical scalar indicating whether to compact the
+  #               ensemble using CompactEns() before fitting. For 
+  #               ensembles with many members per simulator, this
+  #               may speed up the fitting without sacrificing 
+  #               information because the simulator-specific means
+  #               are sufficient statistics. Defaults to TRUE. 
   #  interactions   Logical scalar, indicating which RCM:GCM "interaction"
   #           terms to include in the state vector. Options are "none" to 
   #           exclude them completely, "all" to include all of them
@@ -3797,7 +4154,44 @@ EnsEBM2waytrendSmooth <-
   #  the result of applying the Kalman Smoother to the input series using 
   #  this fitted model. 
   #
-  #  Start by finding initial values for a numerical maximisation of the 
+  #
+  #   Check for partially missing rows of the ensemble data
+  #
+  if (!NA.AllOr0(Y[,-1])) {
+    warning(paste("Some but not all ensemble members contain missing",
+                  "value at some time points.\nThis may cause problems when fitting",
+                  "because the dlm library routines do not cope well\nwith missing",
+                  "values in the observation vector unless the corresponding",
+                  "measurement errors\nare uncorrelated."))
+  }
+  #
+  #  Now compact the ensemble if requested. NB Y and Groups 
+  #  here are local copies in the active environment, hence re-using 
+  #  them won't affect anything else.
+  #
+  RunsPerTS <- NULL
+  if (compact) {
+    GrpStrs <- apply(Groups, MARGIN=1, FUN=paste, collapse=".&.")
+    Y <- CompactEns(Y, GrpStrs)
+    Groups <- Groups[!duplicated(GrpStrs),]
+    GrpStrs <- GrpStrs[!duplicated(GrpStrs)]
+    NewOrder <- match(colnames(Y[,-1]), GrpStrs) # Ensure that
+    GrpStrs <- GrpStrs[NewOrder]                 # everything is in
+    Groups <- Groups[NewOrder,]                  # the right order
+    message("######\n",
+            "######  NOTE: compacting Y and Groups. Do not use these objects",
+            "\n######  when working with the results of this call: use the ",
+            "\n######  versions in the `Data` component of the result.",
+            "\n######")
+    RunsPerTS <- attr(Y, "RunsPerTS")   # Could be NULL
+    if (!identical(colnames(Y)[-1],GrpStrs)) {
+      stop(paste("Ensemble compaction has re-ordered combinations.",
+                  "This is a\nprogramming error: contact package author.",
+                 sep=""))
+    }
+  }
+  #
+  #  Next, find initial values for a numerical maximisation of the 
   #  likelihood. For the observed series these are obtained as in 
   #  EBMtrendSmooth. The variance of slope innovations for the shared
   #  drift is initialised from the corresponding variance from an EBM
@@ -3852,28 +4246,33 @@ EnsEBM2waytrendSmooth <-
   if (as.numeric(messages)>0) {
     cat("Estimating model parameters - please be patient ...\n")
   }
-  if (!UseAlpha) { theta.init <- theta.init[-1]; par.names <- par.names[-1] }
+  if (!UseAlpha) { 
+    theta.init <- theta.init[-1] 
+    par.names <- par.names[-1] 
+  }
   Ybar <- mean(Y[,1], na.rm=TRUE)
   thetahat <- 
     dlm.SafeMLE(theta.init, Y-Ybar, EnsEBM2waytrend.modeldef, Xt=Xt, 
                 m0=m0, C0=C0, kappa=kappa, Shift=Ybar, 
                 prior.pars=prior.pars, Groups=Groups, 
-                interactions=interactions, UseAlpha=UseAlpha, 
-                UsePhi=UsePhi, constrain=constrain, 
+                RunsPerTS=RunsPerTS, interactions=interactions, 
+                UseAlpha=UseAlpha, UsePhi=UsePhi, constrain=constrain, 
                 debug=debug, hessian=TRUE, par.names=par.names, 
                 Use.dlm=Use.dlm, messages=messages, ...)  
   Model <- 
     EnsEBM2waytrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
                              kappa=kappa, Groups=Groups, 
+                             RunsPerTS=RunsPerTS,
                              interactions=interactions, 
                              UseAlpha=UseAlpha, UsePhi=UsePhi, 
-                             constrain=constrain)  
+                             constrain=constrain)
   ShiftMod <- 
     EnsEBM2waytrend.modeldef(thetahat$par, Xt=Xt, m0=m0, C0=C0, 
                              kappa=kappa, Shift=Ybar, Groups=Groups, 
+                             RunsPerTS=RunsPerTS, 
                              interactions=interactions, 
                              UseAlpha=UseAlpha, UsePhi=UsePhi, 
-                             constrain=constrain)  
+                             constrain=constrain)
   if (as.numeric(messages)>0) {
     cat("\nSUMMARY OF STATE SPACE MODEL:\n")
     print(summary.dlmMLE(thetahat))
@@ -3894,5 +4293,6 @@ EnsEBM2waytrendSmooth <-
     Smooth$s <-  # Add the shift back
       t(t(Smooth$s) + attr(ShiftMod, "Shift"))
   }
-  list(Theta=thetahat, Model=Model, Smooth=Smooth)
+  list(Data=list(Y=Y, Groups=Groups),
+       Theta=thetahat, Model=Model, Smooth=Smooth)
 }

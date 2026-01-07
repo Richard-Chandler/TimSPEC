@@ -6,9 +6,9 @@
 }
 \usage{
 EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6, 
-                         Shift=0, Groups, interactions = "none", 
-                         UseAlpha = TRUE, UsePhi = TRUE, 
-                         constrain = TRUE)
+                         Shift=0, Groups, RunsPerTS=NULL,
+                         interactions = "none", UseAlpha = TRUE, 
+                         UsePhi = TRUE, constrain = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,7 +18,8 @@ EnsEBM2waytrend.modeldef(theta, Xt, m0 = NULL, C0=NULL, kappa=1e6,
   \item{C0}{Optional covariance matrix for initialising the state vector. If \code{NULL} (the default) this is determined automatically from the model structure and from \code{kappa} (see below).}
   \item{kappa}{"Large" value with which to initialise variances of diffuse components of state vector at time 0. Ignored if \code{C0} is non-\code{NULL}.}
   \item{Shift}{Fits and smooths can be done on data \code{Y-Shift} to improve numerical stability: often, \code{Shift} will be the sample mean of the observations, as is done automatically in the \code{\link{EnsEBM2waytrendSmooth}} function. The model structure returned is for the shifted data, but with a \code{Shift} attribute containing the vector that must be added to the \code{m0} component and any state estimates to get back to the original scale.}
-  \item{Groups}{Two-column matrix specifying the group membership structureof the ensemble. E.g. if the ensemble contains runs from some combination of RCMs \eqn{1, 2, 3, ..., R} driven by GCMs \eqn{1, 2, 3, ..., G} then \code{Groups[i,1]} and \code{Groups[i,2]} should respectively contain the numbers of the RCM and GCM used for the \eqn{i}th ensemble member. The values of \eqn{R} and \eqn{G} will be taken from the largest numbers found in columns 1 and 2 respectively.}
+  \item{Groups}{Two-column matrix specifying the group membership structureof the ensemble. E.g. if the ensemble contains runs from some combination of RCMs \eqn{1, 2, 3, ..., R} driven by GCMs \eqn{1, 2, 3, ..., G} then \code{Groups[i,1]} and \code{Groups[i,2]} should respectively contain the numbers of the RCM and GCM used for the \eqn{i}th series from the ensemble. The values of \eqn{R} and \eqn{G} will be taken from the largest numbers found in columns 1 and 2 respectively.}
+  \item{RunsPerTS}{Optional vector, of length equal to the number of rows in \code{Groups}. If present, the \eqn{i}th series of the ensemble is interpreted as a mean of \code{RunsPerTS[i]} independent ensemble members e.g. produced from the corresponding GCM:RCM pair under different initial conditions.}
   \item{interactions}{Character scalar, indicating which RCM:GCM "interaction" terms to include in the state vector. Options are \code{"none"} to exclude them completely, \code{"all"} to include all of them and \code{"available"} to include just those for which thecorresponding RCM:GCM combinations appear in \code{Groups}. Default is \code{"none"}, because the interaction terms substantially increase the dimension and are therefore likely to slow things down considerably.}
   \item{UseAlpha}{See "Details" section of help for \code{\link{EnsEBMtrend.modeldef}}}
   \item{UsePhi}{Logical scalar, controlling whether or not to include thermal inertia parameters in the model structure.}
