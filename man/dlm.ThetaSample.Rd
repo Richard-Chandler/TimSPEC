@@ -45,8 +45,9 @@ When \code{Random} is \code{TRUE}, the argument \code{Antithetic} is used to con
 
 If the antithetic options are used, the total number of samples produced is a multiple of a power of 2: if this is greater than \code{N} then a random subset of \code{N} samples is selected. 
 }
-\value{A matrix in which each row contains a posterior sample. The matrix has additional attributes \code{Mean}, \code{Cov.SpD} and \code{df} giving the mean vector, covariance (dispersion) matrix spectral decomposition and degrees of freedom for the underlying distribution. 
+\value{A matrix in which each row contains a posterior sample. The matrix has class \code{dlmSample} and has additional attributes \code{Mean}, \code{Cov.SpD} and \code{df} giving the mean vector, covariance (dispersion) matrix spectral decomposition and degrees of freedom for the underlying distribution. 
 }
 \references{Durbin, J. and Koopman, S. J. (2012). \emph{Time series analysis by state space methods (second edition)}, Chapter 11. Oxford University Press, Oxford.}
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>
 }
+\seealso{\code{link{PostPredSample}} for a wrapper, and \code{\link{summary.dlmSample}} for the \code{summary} method.}
