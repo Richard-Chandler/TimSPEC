@@ -22,17 +22,17 @@ It makes use of the `dlm`, `Hmisc`, `magick` and `numDeriv` add-on packages in `
 distributed via [CRAN](https://cloud.r-project.org/web/packages/dlm/index.html). The package author has been notified but has not fixed them: 
 a patched version is needed, therefore. See the 'Installation' section below. 
 
-Installation requires the `devtools` package in `R`. The instructions below assume that this has been installed (e.g. via the `Tools` menu in `RStudio` or via `install.packages("devtools", lib=<whatever>)` from an `R` console).  
+Installation requires either the `devtools` or `pak` packages in `R`. The instructions below are for `pak`, since the `install_github()` command in `devtools` is deprecated in `R` version 4.5.3. If you don't have it already, you can install it via the `Tools` menu in `RStudio` or via `install.packages("pak", lib=<whatever>)` from an `R` console).  
 
 # Installation
 
-You should install the corrected version of the `dlm` library (version 1.1-6.1 on CRAN at time of writing, renumbered here to start at version 1.1-600) **before** installing `TimSPEC`: some users have reported errors if the installation is done the other way round. To install the corrected `dlm`, in addition to `devtools` (see above) `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant [compilation tools](https://mac.r-project.org/tools/) are available, depending on their setup.
+You should install the corrected version of the `dlm` library (version 1.1-6.1 on CRAN at time of writing, renumbered here to start at version 1.1-600) **before** installing `TimSPEC`: some users have reported errors if the installation is done the other way round. To install the corrected `dlm`, in addition to `pak` (see above) `Windows` users may need to install `Rtools` as described [here](https://cran.r-project.org/bin/windows/Rtools/). `Mac` users also may need to ensure that the relevant [compilation tools](https://mac.r-project.org/tools/) are available, depending on their setup.
 
-Then the two packages (`dlm` and `TimSPEC`) can be installed as follows
+Then the two packages (`dlm` and `TimSPEC`) can be installed to a default location as follows:
 
 ```
-library(devtools)
-install_github("Richard-Chandler/dlmPatched")
-install_github("Richard-Chandler/TimSPEC")
+library(pak)
+pak("Richard-Chandler/dlmPatched")
+pak("Richard-Chandler/TimSPEC")
 ```
 If this succeeds, you are now ready to start. `help(SLLTSmooth)` may be a useful entry point. 
