@@ -9,11 +9,12 @@ export("covxfrm", "num.deriv", "num.hess",
 	   "PlotImportanceWts", "PlotEnsTS", "PostPred.VidFrames", 
 	   "PostPredSample", "print.dlmMLE", print.summary.dlmMLE, 
 	   "SampleObs", "SampleStates", "SLLT.IniPar", "SLLT.modeldef", 
-	   "SLLTSmooth", "SmoothPlot", "summary.dlmMLE", "which.diffuse")
+	   "SLLTSmooth", "SmoothPlot", "summary.dlmMLE", 
+	   "summary.dlmSample", "which.diffuse")
 import(dlm, magick)
-importFrom("stats", "lm", "predict")
+importFrom("stats", "lm", "predict", "sd", "weighted.mean")
 importFrom("utils", "str")
-importFrom(Hmisc, "wtd.quantile")
+importFrom("Hmisc", "wtd.quantile", "wtd.var")
 importFrom("grDevices", "col2rgb", "dev.off", "grey", "hcl.colors", "png", "rgb")
 importFrom("graphics", "abline", "legend", "lines", "matlines", "matplot", "mtext", 
 		"pairs", "par", "polygon", "title")
@@ -24,3 +25,4 @@ importFrom("stats", "acf", "arima", "coef", "contrasts<-", "cov2cor", "dnorm", "
 S3method(print, dlmMLE)
 S3method(summary, dlmMLE)
 S3method(print, summary.dlmMLE)
+S3method(summary, dlmSample)

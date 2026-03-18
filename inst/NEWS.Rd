@@ -1,6 +1,14 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
+\section{Changes in version 0.2-2 (2026-3-17)}{
+  \itemize{
+  \item{Added a \code{dlmSample} class with a \code{summary} method, for convenience in extracting posterior summaries.}
+  \item{Corrected an error in the default setting for \code{Level} in \code{\link{PostPredSample}}.}
+  \item{Corrected an error in the logic for \code{\link{dlm.ThetaSample}} when the \code{Random} argument is \code{FALSE}.}
+  }
+}
+
 \section{Changes in version 0.2-1 (2025-12-20)}{
   \itemize{
   \item{Renamed the \code{NRuns} arguments in \code{\link{EnsEBMtrend.modeldef}} and \code{\link{EnsSLLT.modeldef}} to \code{NEnsTS} `number of time series from the ensemble', and added an optional \code{RunsPerTS} argument to allow for data reduction by (e.g.) averaging independent ensemble members from the same simulator. A \code{RunsPerTS} argument has also been added to \code{\link{EnsEBM2waytrend.modeldef}}.}

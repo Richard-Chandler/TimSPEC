@@ -95,6 +95,7 @@
 #                       them. 
 # summary.dlmMLE        Summarises the maximum likelihood estimates from
 #                       the results of a call to dlmMLE or equivalent
+# summary.dlmSample     Summary method for posterior samples.
 # which.diffuse         Identifies which components of the state vector
 #                       require diffuse initialisation, in a dynamic linear
 #                       model. From the software for Chandler & Scott (2011). 
@@ -1738,24 +1739,21 @@ dlm.ThetaSample <- function(Fit, N, Random=TRUE, Quantile=TRUE,
   Zeroes <- Cov.SpD$values==0
   Cov.SpD$values[!Zeroes] <- 1/Cov.SpD$values[!Zeroes]
   d <- length(Cov.SpD$values) # length of parameter vector
-  design <- matrix(rep(1, d), nrow=1) # Basic "design matrix" for a single sample
-  if (!Random) { # Design points for deterministic samples
-    design <- as.matrix(expand.grid(rep(list(c(-1,1)), d)))
-  }
-  if ("Corr" %in% Antithetic) {
-    design <- as.matrix(expand.grid(rep(list(c(-1,1)), d)))
-    if ("Mean" %in% Antithetic) {
-      warning("'Mean' antithetic option ignored when 'Corr' is specified")
-    }
-  } else if ("Mean" %in% Antithetic) {
-    design <- rbind(design, -design)
-  }
-  design.scale <- rep(1, nrow(design))  # To allow for antithetic scale sampling
-  if ("Scale" %in% Antithetic) {
-    design <- design[rep(1:nrow(design), each=2),]
-    design.scale <- c(1,-1) * rep(design.scale, each=2) # Uses recycling of c(1,-1)
-  }
   if (Random) {
+    design <- matrix(rep(1, d), nrow=1) # Basic "design matrix" for a single sample
+    if ("Corr" %in% Antithetic) {
+      design <- as.matrix(expand.grid(rep(list(c(-1,1)), d)))
+      if ("Mean" %in% Antithetic) {
+        warning("'Mean' antithetic option ignored when 'Corr' is specified")
+      }
+    } else if ("Mean" %in% Antithetic) {
+      design <- rbind(design, -design)
+    }
+    design.scale <- rep(1, nrow(design))  # To allow for antithetic scale sampling
+    if ("Scale" %in% Antithetic) {
+      design <- design[rep(1:nrow(design), each=2),]
+      design.scale <- c(1,-1) * rep(design.scale, each=2) # Uses recycling of c(1,-1)
+    }
     NReps <- nrow(design) # Number of correlated samples for each independent one
     NInd <- ceiling(N / NReps)
     z <- matrix(rnorm(NInd*d), ncol=d) # Matrix filled with standard normals
@@ -1775,8 +1773,9 @@ dlm.ThetaSample <- function(Fit, N, Random=TRUE, Quantile=TRUE,
       }
       z <- z[sample(1:nrow(z), N),,drop=FALSE] # Thin to leave N samples
     }
-  } else { # Non-random sample; need value of A, stored in the object NSDs
-    if (Quantile) {
+  } else { # Non-random sample; start by getting design points
+    design <- as.matrix(expand.grid(rep(list(c(-1,1)), d)))
+    if (Quantile) {  # Need value of A, stored in the object NSDs
       NSDs <- sqrt(qchisq(Level, d) / d)
     } else {
       NSDs <- Level
@@ -1799,8 +1798,69 @@ dlm.ThetaSample <- function(Fit, N, Random=TRUE, Quantile=TRUE,
   attr(z, "Cov.SpD") <- Cov.SpD
   attr(z, "df") <- df
   colnames(z) <- names(Fit$par)
+  class(z) <- c("list", "dlmSample")
   z
-}######################################################################
+}
+######################################################################
+summary.dlmSample <- function(object, weights=NULL, digits=4, ...) {
+  ######################################################################
+  #
+  # summary method for an object containing samples from the posterior 
+  # distribution of parameters in a dynamic linear model (obtained from 
+  # a call to either dlm.ThetaSample or PostPredSample)
+  # Arguments:
+  #
+  # object		  The result of a call to dlm.ThetaSample or PostPredSample
+  # weights     Either a logical scalar indicating whether or not to 
+  #             calculate a weighted summary using information in the 
+  #             weights component of object, or a vector of importance
+  #             sampling weights. The default behaviour is to calculate
+  #             the weighted summary if object contains a Weights component.
+  # ...         For consistency with the summary() generic
+  #
+  # Value: a data frame containing a column for each of the parameters, 
+  # and rows giving their posterior means and standard deviations. If
+  # object contains a non-NULL "Weights" component and Weights is TRUE, or
+  # if Weights is a vector, then the data frame contains rows for both 
+  # weighted and unweighted means and standard deviations (so four rows in 
+  # total). Otherwise it contains just the unweighted versions.
+  #
+  ######################################################################
+  if (!inherits(object, "dlmSample")) {
+    stop("this function should only be used for dlmSample objects")
+  }
+  w <- NULL
+  if (inherits(object, "list")) { # This comes from PostPredSample
+    Thetas <- object$Thetas
+    if (is.null(weights) | isTRUE(weights)) {
+      w <- object$Weights$w # Will be NULL if weights aren't present
+      if (is.null(w) & isTRUE(weights)) {
+        warning("Weighted summary requested but no weights present in object")
+      }
+    } else if (is.vector(weights, mode="numeric")) w <- weights
+  } else if (inherits(object, "matrix")) { # Comes from dlm.Thetasample
+    Thetas <- object
+    if (is.vector(weights, mode="numeric")) {
+      w <- weights
+    } else if (isTRUE(weights)) {
+      warning("Weighted summary requested but no weights provided")
+    }
+  } else stop("object has a mystery class: use dlm.Thetasample or PostPredSample")
+  z <- as.data.frame(matrix(nrow=2*(1+!is.null(w)), ncol=ncol(Thetas)))
+  names(z) <- colnames(Thetas)
+  rownames(z)[1:2] <- c("Mean", "SD")
+  z[1,] <- colMeans(Thetas)
+  z[2,] <- apply(Thetas, MARGIN=2, FUN=sd)
+  if (!is.null(w)) {
+    rownames(z)[3:4] <- c("Weighted mean", "Weighted SD")
+    z[3,] <- apply(Thetas, MARGIN=2, FUN=weighted.mean, w=w)
+    z[4,] <- 
+      apply(Thetas, MARGIN=2, FUN=function(x) sqrt(wtd.var(x, weights=w, normwt=TRUE)))
+  }
+  print(z, digits=digits)
+  invisible(z)
+}
+######################################################################
 dmvnorm.SpD <- function(x, mu, Cov.SpD, logged=FALSE) {
   #
   #   To calculate the density of a multivariate normal distribution
@@ -2294,7 +2354,7 @@ SampleObs <- function(Thetas, States, build, Y, WhichEls=1:ncol(Y),
 ######################################################################
 PostPredSample <- function(ModelBundle, Y=NULL, Build, N,  
                            Random=TRUE, Quantile=TRUE, 
-                           Level=ifelse(Quantile, 1.96, 0.99),
+                           Level=ifelse(Quantile, 0.99, 1.96),
                            df=NULL, Antithetic=c("Mean", "Scale"),
                            Importance=FALSE, CheckMax=FALSE, 
 						   ReplaceOnFail=Random, PlotFails=FALSE, 
@@ -2509,6 +2569,7 @@ PostPredSample <- function(ModelBundle, Y=NULL, Build, N,
     }
   }
   z$Model <- ModelBundle$Model
+  class(z) <- c("list", "dlmSample")
   z
 }
 ######################################################################

@@ -5,7 +5,7 @@
 \description{To draw samples from the posterior predictive distribution of observable time series (real-world or ensemble members) using a fitted dynamic linear model (DLM).}
 \usage{
 PostPredSample(ModelBundle, Y=NULL, Build, N, Random = TRUE, 
-               Quantile = TRUE, Level = ifelse(Quantile, 1.96, 0.99), 
+               Quantile = TRUE, Level = ifelse(Quantile, 0.99, 1.96), 
                df = NULL, Antithetic = c("Mean", "Scale"), 
                Importance = FALSE, CheckMax = FALSE, 
                ReplaceOnFail = Random, PlotFails = FALSE, WhichEls = 1, 
@@ -35,7 +35,7 @@ PostPredSample(ModelBundle, Y=NULL, Build, N, Random = TRUE,
   \item{\dots}{Additional arguments to \code{build}. Note, however, that if \code{build} has a \code{RunsPerTS} argument then the routine will take this from the \code{RunsPerTS} attribute of \code{Y} (or \code{ModelBundle$Data$Y}, whichever is used) if present e.g. arising from a call to \code{\link{CompactEns}}: in this case therefore, the user should not supply this argument separately. Similarly, if \code{build} has a \code{Groups} argument then this will be taken from the \code{Groups} component of \code{Data} if present.}
 }
 
-\value{The function is intended to return a list containing the following elements:
+\value{The function is intended to return a list of class \code{dlmSample} containing the following elements:
 
 \item{Thetas}{The result of the call to \code{\link{dlm.ThetaSample}};}
 \item{States}{The result of the call to \code{\link{SampleStates}};} 
@@ -50,7 +50,7 @@ If, however, \code{Importance} and \code{CheckMax} are both \code{TRUE} and the 
 
 \author{Richard E. Chandler <r.chandler@ucl.ac.uk>}
 
-\seealso{\code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}}, \code{\link{SampleObs}}, \code{\link{SLLTSmooth}} (for details of example below)}
+\seealso{\code{\link{dlm.ThetaSample}}, \code{\link{SampleStates}}, \code{\link{SampleObs}}, \code{\link{SLLTSmooth}} (for details of example below). Also \code{\link{summary.dlmSample}} for the \code{summary} method.}
 
 \examples{
 ## Start by running the example for EBMtrendSMooth to create a smooth object
@@ -92,6 +92,10 @@ if(is.null(BestID)) cat("None found") else {
                    Xt=ERF585$NetERF)
 }
 
+## Get summary of posterior
+summary(PPS)
+
+## And plot the projections
 SmoothPlot(GlobalTemps585[,1:2], Samples=PPS, 
            DatColours=c("black", NA), PredColours=c("darkblue", NA), 
            SmoothPIs = TRUE, ylim=c(13, 19), 
