@@ -9,7 +9,7 @@ PostPred.VidFrames(Data, Samples, AntiLog = FALSE, DatColours,
                    Nsteps = 5, replace = TRUE, Folder, 
                    FileNameRoot = Folder, WarnExisting = TRUE, 
                    PNG.args = list(), MakeGif = TRUE, DelFrames = FALSE,
-                   Annotation = FALSE, ...)
+                   Annotation = NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,7 +28,7 @@ PostPred.VidFrames(Data, Samples, AntiLog = FALSE, DatColours,
   \item{PNG.args}{List of arguments to the \code{\link{png}} command, used to control (e.g.) the size of the images produced. }
   \item{MakeGif}{If \code{TRUE}, a GIF animation will also be created. }
   \item{DelFrames}{If \code{TRUE} and if \code{MakeGif} is \code{TRUE}, the files containing the individual video frames will be deleted after the GIF is created. }
-  \item{Annotation}{If \code{TRUE}, plots / frames will be annotated with copyright and funding information using \code{\link{GraphAnnot}}. }
+  \item{Annotation}{If this is a list with elements \code{Copyright} and \code{Acknowl}, these will be passed as arguments to \code{\link{GraphAnnot}} for each frame of the video so that the entire video can be annotated with copyright information.}
   \item{\dots}{Other arguments to \code{\link{SmoothPlot}} }
 }
 \details{This function implements the suggestion of Bowman (2019), to visualise uncertainty in complex objects using animations. Each individual frame in an animationshows a sample from the posterior distribution (strictly speaking, from a joint distribution with the same mean and covariance as the posterior); but the samples are consgtructed in such a way that the transitions between frames are smooth. The smoothness of the transitions helps the viewer to process the information as it is presented. 
