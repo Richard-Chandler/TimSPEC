@@ -1344,7 +1344,26 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
       ArgsNeeded <- ArgsNeeded[!(names(ArgsNeeded)=="...")]
       LLArgs <- c(ArgsGiven[names(ArgsGiven) %in% names(ArgsNeeded)],
                   ArgsNeeded[!(names(ArgsNeeded) %in% names(ArgsGiven))])
-      if (is.null(LL.init)) LL.init <- do.call(dlm.SafeLL, LLArgs)
+      if (is.null(LL.init)) {
+        NotStarted <- TRUE; NStarts <- 0
+        while (NotStarted) { # Attempt to trap logL failures at initial value
+          NStarts <- NStarts + 1
+          LL.init <- do.call(dlm.SafeLL, LLArgs)
+          if (!is.null(attr(LL.init, "error"))) {
+            if (NStarts < 2) {
+              warning(paste("dlm.SafeLL failed at initial value of theta - ", 
+                            "trying alternatives. Error message was\n '", 
+                            attr(LL.init, "error")$message,"'", sep=""),
+                      immediate.=TRUE)
+            }
+            theta.init <- 0.95*theta.init
+            LLArgs$theta <- theta.init
+            NotStarted <- (NStarts<10) 
+          } else {
+            NotStarted <- FALSE
+          }
+        }
+      }
       if (!is.null(par.names)) names(theta.init) <- par.names
       if (as.numeric(messages) > 0) {
         cat("Initial value for theta:\n")
@@ -1355,9 +1374,9 @@ dlm.SafeMLE <- function(theta.init, Y, build, debug=FALSE,
       #   Bail out if initial value calculation failed
       #
       if (!is.null(attr(LL.init, "error"))) {
-        warning(paste("dlm.SafeLL failed at initial value of theta -", 
-                      "error message was\n ", 
-                      attr(LL.init, "error")$message), immediate.=TRUE)
+        warning(paste("Unable to find suitable initial value of theta -", 
+                      "returning infinite negative log-likelihood."), 
+                immediate.=TRUE)
         z <- list(par=theta.init, value=Inf, code=-1, counts=0)
         if (!is.null(par.names)) names(z$par) <- par.names
         if (!(Use.dlm | is.null(prior.pars))) z$prior.pars <- prior.pars
@@ -2578,7 +2597,7 @@ PostPred.VidFrames <-
            PredColours, Nsamples=20, Nsteps=5, replace=TRUE,
            Folder, FileNameRoot=Folder, WarnExisting=TRUE, 
            PNG.args=list(), MakeGif=TRUE, DelFrames=FALSE,
-           Annotation=FALSE, ...) {
+           Annotation=NULL, ...) {
   #
   #   To produce the video frames for an animation of samples
   #   from a postprocessed ensemble using the approach of
@@ -2627,8 +2646,9 @@ PostPred.VidFrames <-
   #               files containing the individual video 
   #               frames will be deleted after the Gif is
   #               created.
-  #   Annotation  If TRUE, plots / frames will be annotated
-  #               with copyright and funding information
+  #   Annotation  Optional list of arguments to GraphAnnot()
+  #               e.g. for providing copyright and funding 
+  #               information.
   #   ...         Other arguments to SmoothPlot(). 
   #      
   #   The function produces a collection of graphics files in 
@@ -2718,7 +2738,13 @@ PostPred.VidFrames <-
     Y0 <- Data[,2]; Y0[MissObs] <- res[MissObs,i]
     if (AntiLog) Y0 <- exp(Y0)
     lines(Data[,1], Y0, lwd=5, col=DatColours[1])
-    if (Annotation) GraphAnnot()
+    if (!is.null(Annotation)) {
+      if (!all(c("Copyright", "Acknowl") %in% names(Annotation))) {
+        stop(paste("If non-NULL, 'Annotation' should be a list",
+                   "with elements 'Copyright' and 'Acknowl'"))
+      }
+      do.call(GraphAnnot, Annotation)
+    }
     dev.off()
   }
   #
@@ -2920,7 +2946,7 @@ SLLTSmooth <- function(Y, m0=NULL, C0=NULL, kappa=1e6, prior.pars=NULL,
   #
   Smooth <- tryCatch(dlmSmooth(Y-Ybar, ShiftMod, debug=debug), 
                      error=function(e) { 
-                       z <- rep(NA, length=Y)
+                       z <- rep(NA, length(Y))
                        attr(z, "error") <- e; z
                        }
                      )
@@ -3364,7 +3390,7 @@ EnsSLLTSmooth <-
   #
   Smooth <- tryCatch(dlmSmooth(Y-Ybar, ShiftMod, debug=debug), 
                      error=function(e) { 
-                       z <- rep(NA, length=Y)
+                       z <- rep(NA, length(Y))
                        attr(z, "error") <- e; z
                      }
   )
@@ -3515,7 +3541,7 @@ EBMtrendSmooth <- function(Y, Xt, m0=NULL, C0=NULL, kappa=1e6, UsePhi=TRUE,
   #
   Smooth <- tryCatch(dlmSmooth(Y-Ybar, ShiftMod, debug=debug), 
                      error=function(e) { 
-                       z <- rep(NA, length=Y)
+                       z <- rep(NA, length(Y))
                        attr(z, "error") <- e; z
                      }
   )
@@ -3871,7 +3897,7 @@ EnsEBMtrendSmooth <-
   #
   Smooth <- tryCatch(dlmSmooth(Y-Ybar, ShiftMod, debug=debug), 
                      error=function(e) { 
-                       z <- rep(NA, length=Y)
+                       z <- rep(NA, length(Y))
                        attr(z, "error") <- e; z
                      }
   )
@@ -4343,7 +4369,7 @@ EnsEBM2waytrendSmooth <-
   #
   Smooth <- tryCatch(dlmSmooth(Y-Ybar, ShiftMod, debug=debug), 
                      error=function(e) { 
-                       z <- rep(NA, length=Y)
+                       z <- rep(NA, length(Y))
                        attr(z, "error") <- e; z
                      }
   )
