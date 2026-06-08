@@ -1,6 +1,15 @@
 \title{Update history for package "TimSPEC"}
 \name{NEWS}
 
+\section{Changes in version 0.2-3 (2026-6-08)}{
+  \itemize{
+  \item{Added a workaround in \code{\link{dlm.SafeMLE}} to handle situations where the log-likelihood calculation fails at the initial value of theta.}
+  \item{Amended the \code{Annotation} argument to \code{\link{PostPred.VidFrames}}, to enable non-default copyright annotations on videos.}
+  \item{Corrected the error-trapping code in the various \code{xxxxSmooth} routines, which was throwing an unnecessary warning message.}
+  \item{Corrected an error in the documentation for argument \code{NEnsTS} in \code{\link{EnsEBMtrend.modeldef}}.}
+  }
+}
+
 \section{Changes in version 0.2-2 (2026-3-17)}{
   \itemize{
   \item{Added a \code{dlmSample} class with a \code{summary} method, for convenience in extracting posterior summaries.}
